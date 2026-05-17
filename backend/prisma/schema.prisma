@@ -1,0 +1,220 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum RoleType {
+  USER
+  ADMIN
+  PREMIUM
+}
+
+// The mode of the interview session
+enum InterviewMode {
+  TEXT      // Pure text Q&A
+  VOICE     // Audio STT + TTS
+  VIDEO_SIM // Simulated video (audio + camera feed, no actual recording)
+}
+
+// Session lifecycle states
+enum SessionStatus {
+  CONFIGURING   // User is on the setup screen, session created but not started
+  IN_PROGRESS   // Live interview is running
+  PROCESSING    // Interview ended, feedback is being generated async
+  COMPLETED     // Feedback is ready, session fully closed
+  ABANDONED     // User disconnected without completing
+  ERROR         // System error during session
+}
+
+// Category of each interview question
+enum QuestionCategory {
+  BEHAVIORAL
+  TECHNICAL
+  SYSTEM_DESIGN
+  CODING
+  SITUATIONAL
+  CULTURE_FIT
+}
+
+// Background feedback job status
+enum FeedbackStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  displayName   String
+  avatarUrl     String?
+  role          RoleType  @default(USER)
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  refreshTokens   RefreshToken[]
+  resume          Resume?
+  sessions        InterviewSession[]
+  auditLogs       AuditLog[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  tokenHash   String   @unique           // Store bcrypt hash, never raw token
+  userId      String
+  expiresAt   DateTime
+  isRevoked   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  userAgent   String?
+  ipAddress   String?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+model Resume {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  originalName  String                   // Original uploaded filename
+  storagePath   String                   // Server-side path or S3 key
+  mimeType      String   @default("application/pdf")
+  parsedText    String?  @db.Text        // Raw extracted text
+  parsedSkills  Json?                    // { technical: [], soft: [], languages: [] }
+  parsedRoles   Json?                    // [{ title, company, duration }]
+  parsedSummary String?  @db.Text        // LLM-generated profile summary
+  uploadedAt    DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("resumes")
+}
+
+model InterviewSession {
+  id              String        @id @default(cuid())
+  userId          String
+  mode            InterviewMode
+  status          SessionStatus @default(CONFIGURING)
+  targetRole      String                             // e.g., "Senior Software Engineer"
+  difficulty      Int           @default(3)          // 1-5 scale
+  durationSeconds Int?                               // Actual duration when completed
+  questionCount   Int           @default(5)
+  resumeContext   Json?                              // Snapshot of parsed resume at session time
+  startedAt       DateTime?
+  endedAt         DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions       InterviewQuestion[]
+  feedbackReport  FeedbackReport?
+
+  // Performance indexes
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("interview_sessions")
+}
+
+model InterviewQuestion {
+  id              String            @id @default(cuid())
+  sessionId       String
+  sequenceNumber  Int                                // Order within session (1-based)
+  category        QuestionCategory
+  questionText    String            @db.Text
+  userAnswer      String?           @db.Text         // Raw transcribed or typed answer
+  aiFollowUp      String?           @db.Text         // AI follow-up question text, if any
+  llmAnnotation   String?           @db.Text         // Per-question AI comment
+  askedAt         DateTime          @default(now())
+  answeredAt      DateTime?
+  answerDuration  Int?                               // Seconds taken to answer
+
+  session  InterviewSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, sequenceNumber])
+  @@index([sessionId])
+  @@index([category])
+  @@map("interview_questions")
+}
+
+model FeedbackReport {
+  id                  String         @id @default(cuid())
+  sessionId           String         @unique
+  status              FeedbackStatus @default(PENDING)
+
+  // Aggregate scores (0.0 – 10.0, stored as Decimal for precision)
+  overallScore        Decimal?       @db.Decimal(4, 2)
+  technicalScore      Decimal?       @db.Decimal(4, 2)
+  communicationScore  Decimal?       @db.Decimal(4, 2)
+  pacingScore         Decimal?       @db.Decimal(4, 2)
+  codeQualityScore    Decimal?       @db.Decimal(4, 2)
+  behavioralScore     Decimal?       @db.Decimal(4, 2)
+
+  // Structured JSON payloads from LLM evaluator
+  strengths           Json?          // string[]
+  improvements        Json?          // { area: string, detail: string, example: string }[]
+  questionFeedback    Json?          // per-question annotation array
+  fullTranscript      Json?          // [{ role, content, timestamp }]
+  rawLlmResponse      String?        @db.Text  // Raw evaluator response for debugging
+
+  processingStartedAt DateTime?
+  processingEndedAt   DateTime?
+  errorMessage        String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  session  InterviewSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([status])
+  @@map("feedback_reports")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String                  // e.g., "LOGIN", "SESSION_CREATED", "RESUME_UPLOADED"
+  metadata  Json?                   // Arbitrary contextual data
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
