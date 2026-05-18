@@ -1,33 +1,32 @@
-// backend/src/common/guards/ws-jwt.guard.ts
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Socket } from 'socket.io';
-import { WsException } from '@nestjs/websockets';
+import { Request } from 'express';
 
 @Injectable()
-export class WsJwtGuard implements CanActivate {
+export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const client: Socket = context.switchToWs().getClient();
-    // Token sent in handshake: socket = io(url, { auth: { token: 'Bearer ...' } })
-    const token = client.handshake.auth?.token?.replace('Bearer ', '');
+    const request: Request = context.switchToHttp().getRequest();
+    const authHeader = request.headers['authorization'];
 
-    if (!token) throw new WsException('No authentication token');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Missing or invalid token');
+    }
 
+    const token = authHeader.split(' ')[1];
     try {
       const payload = this.jwt.verify(token, {
         secret: this.config.get('JWT_ACCESS_SECRET'),
       });
-      client.data.userId = payload.sub;
-      client.data.email = payload.email;
+      request['user'] = payload; // Attach user to request
       return true;
     } catch {
-      throw new WsException('Invalid or expired token');
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 }
