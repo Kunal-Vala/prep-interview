@@ -43,4 +43,29 @@ export class AuthService {
             ...tokens,
         };
     }
+    private async issueTokens(userId: string, email: string) {
+        const payload = { sub: userId, email }
+
+        const accessToken = this.jwt.sign(payload, {
+            secret: this.config.get('JWT_ACCESS_SECRET'),
+            expiresIn: this.config.get('JWT_ACCESS_EXPIRES_IN', '15m'),
+        })
+
+        const refreshToken = this.jwt.sign(payload, {
+            secret: this.config.get("JWT_REFRESH_SECRET"),
+            expiresIn: this.config.get("JWT_REFRESH_EXPIRES_IN", '7d')
+        })
+
+        // Store hashed refresh token for revocation support
+        const tokenHash = await bcrypt.hash(refreshToken, 10);
+        await this.prisma.refreshToken.create({
+            data: {
+                userId,
+                tokenHash,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            },
+        });
+        return { accessToken, refreshToken };
+
+    }
 }
