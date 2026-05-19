@@ -9,7 +9,9 @@ class CustomIoAdapter extends IoAdapter {
     return super.createIOServer(port, {
       ...options,
       cors: {
-        origin: process.env.CORS_ORIGINS?.split(',') ?? ['http://localhost:3000'],
+        origin: process.env.CORS_ORIGINS?.split(',') ?? [
+          'http://localhost:3000',
+        ],
         credentials: true,
       },
       transports: ['websocket'],
