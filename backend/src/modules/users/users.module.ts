@@ -10,13 +10,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_ACCESS_SECRET')
+        secret: config.get('JWT_ACCESS_SECRET'),
       }),
     }),
   ],
   providers: [UsersService],
-  controllers: [UsersController]
+  controllers: [UsersController],
 })
-
-export class UsersModule { }
-
+export class UsersModule {}
