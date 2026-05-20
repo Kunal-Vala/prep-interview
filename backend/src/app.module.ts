@@ -5,7 +5,6 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { InterviewGateway } from './modules/interview/interview.gateway';
 import { InterviewModule } from './modules/interview/interview.module';
 import { AiModule } from './modules/ai/ai.module';
 
@@ -19,6 +18,6 @@ import { AiModule } from './modules/ai/ai.module';
     AiModule,
   ],
   controllers: [AppController],
-  providers: [AppService, InterviewGateway],
+  providers: [AppService],
 })
 export class AppModule {}
