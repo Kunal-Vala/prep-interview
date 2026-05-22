@@ -9,14 +9,20 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
-import { WsJwtGuard } from 'src/common/guards/ws-jwt.guard';
+import { WsJwtGuard } from '../../common/guards/ws-jwt.guard';
+
+interface AuthenticatedSocket extends Socket {
+  data: {
+    userId: string;
+  };
+}
 
 @WebSocketGateway({ namespace: '/interview' })
 export class InterviewGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(InterviewGateway.name);
 
@@ -29,14 +35,14 @@ export class InterviewGateway
 
   @UseGuards(WsJwtGuard)
   @SubscribeMessage('join-session')
-  handleJoinSession(
-    @ConnectedSocket() client: Socket,
+  async handleJoinSession(
+    @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { sessionId: string },
   ) {
     this.logger.log(
       `User ${client.data.userId} joining session ${data.sessionId}`,
     );
-    client.join(data.sessionId);
+    await client.join(data.sessionId);
 
     client.emit('next-question', {
       questionId: 'mock-q-1',
