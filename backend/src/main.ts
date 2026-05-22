@@ -2,10 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { ServerOptions } from 'socket.io';
+import { Server, ServerOptions } from 'socket.io';
 
 class CustomIoAdapter extends IoAdapter {
-  createIOServer(port: number, options?: ServerOptions) {
+  createIOServer(port: number, options?: ServerOptions): Server {
     return super.createIOServer(port, {
       ...options,
       cors: {
@@ -16,7 +16,7 @@ class CustomIoAdapter extends IoAdapter {
       },
       transports: ['websocket'],
       maxHttpBufferSize: 1e7, // 10 MB max for binary audio chunks
-    });
+    }) as Server;
   }
 }
 
@@ -34,4 +34,8 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 4000);
   console.log(`🚀 Server running on port ${process.env.PORT ?? 4000}`);
 }
-bootstrap();
+// At the very bottom of your main.ts file
+bootstrap().catch((err) => {
+  console.error('❌ Server failed to start:', err);
+  process.exit(1);
+});
