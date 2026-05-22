@@ -65,4 +65,32 @@ export class AiService {
       throw error;
     }
   }
+
+  /**
+   * Generates a non-streaming evaluation using the LLM.
+   * Uses OpenAI-compatible API via GitHub Models.
+   * @param prompt The full evaluation prompt containing the transcript.
+   */
+
+  async generateEvaluation(prompt: string): Promise<string> {
+    try {
+      this.logger.log('Generating LLM evaluation...');
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0,
+      });
+
+      this.logger.log('LLM Evaluation Generation Complete.');
+      return response.choices[0]?.message?.content || '';
+    } catch (error) {
+      this.logger.error('LLM evaluation generation failed', error);
+      throw error;
+    }
+  }
 }
