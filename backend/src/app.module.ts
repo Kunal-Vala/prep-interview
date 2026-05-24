@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { InterviewModule } from './modules/interview/interview.module';
 import { AiModule } from './modules/ai/ai.module';
+import { QueueModule } from './modules/queue/queue.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AiModule } from './modules/ai/ai.module';
     UsersModule,
     InterviewModule,
     AiModule,
+    QueueModule,
   ],
   controllers: [AppController],
   providers: [AppService],
