@@ -13,7 +13,7 @@ export function useAudioRecorder({
 }: AudioRecorderOptions) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const steamRef = useRef<MediaStream | null>(null);
-  const [isRecording, setRecording] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
 
   // Safely persist the latest onChunk callback to prevent hook dependency thrashing
   const onChunkRef = useRef(onChunk);
@@ -41,6 +41,46 @@ export function useAudioRecorder({
     return ""; // Fallback to browser defaults if all else fails
   }, []);
 
-  
+  const startRecording = useCallback(async (): Promise<MediaStream> => {
+    // IF Already Active
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      return steamRef.current!;
+    }
 
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000,
+          channelCount: 1,
+        },
+      });
+
+      steamRef.current = stream;
+      const mimeType = getSupportedMimeType();
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e: BlobEvent) => {
+        if (e.data && e.data.size > 0) {
+          onChunkRef.current(e.data);
+        }
+      };
+
+      recorder.start(timesliceMs);
+      setIsRecording(true);
+      return stream;
+    } catch (error) {
+      console.error(
+        "[AudioRecorder SDK] Failed to establish safe hardware stream access:",
+        error,
+      );
+      throw error;
+    }
+  }, [timesliceMs, getSupportedMimeType]);
 }
