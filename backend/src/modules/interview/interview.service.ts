@@ -30,4 +30,22 @@ export class InterviewService {
       },
     });
   }
+
+  async listUserSessions(userId: string) {
+    return this.prisma.interviewSession.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        feedbackReport: {
+          select: {
+            status: true,
+            overallScore: true,
+          },
+        },
+        _count: {
+          select: { questions: true },
+        },
+      },
+    });
+  }
 }
