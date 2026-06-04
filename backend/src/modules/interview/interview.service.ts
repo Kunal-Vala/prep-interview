@@ -66,4 +66,19 @@ export class InterviewService {
 
     return session;
   }
+
+  async getSessionFeedback(sessionId: string, userId: string) {
+    const session = await this.prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+      select: { userId: true },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    if (session.userId !== userId)
+      throw new ForbiddenException('Unauthorized access');
+    const report = await this.prisma.feedbackReport.findUnique({
+      where: { sessionId },
+    });
+    if (!report) throw new NotFoundException('Feedback report not found');
+    return report;
+  }
 }
