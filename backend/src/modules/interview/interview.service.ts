@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateSessionDto } from './dto/create-session.dto';
@@ -9,15 +10,21 @@ import { SessionStatus } from '@prisma/client';
 
 @Injectable()
 export class InterviewService {
+  // Instantiating a contextual logger bound to this specific service class
+  private readonly logger = new Logger(InterviewService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Initializes an AI Mock Interview session and generates a corresponding blank feedback report.
+   */
   async createSession(userId: string, dto: CreateSessionDto) {
-    return this.prisma.interviewSession.create({
+    const session = await this.prisma.interviewSession.create({
       data: {
         userId,
-        mode: dto.mode,
         targetRole: dto.targetRole,
         difficulty: dto.difficulty,
+        mode: dto.mode,
         status: SessionStatus.IN_PROGRESS,
         feedbackReport: {
           create: {
@@ -29,8 +36,17 @@ export class InterviewService {
         feedbackReport: true,
       },
     });
+
+    this.logger.log(
+      `User [${userId}] successfully initiated interview session [${session.id}]`,
+    );
+    return session;
   }
 
+  /**
+   * Retrieves all historical interview sessions for a specific user.
+   * Leverages data projections to keep payloads light.
+   */
   async listUserSessions(userId: string) {
     return this.prisma.interviewSession.findMany({
       where: { userId },
@@ -49,6 +65,10 @@ export class InterviewService {
     });
   }
 
+  /**
+   * Fetches the complete structural details of a session, including questions.
+   * Validates both existence and resource ownership.
+   */
   async getSession(sessionId: string, userId: string) {
     const session = await this.prisma.interviewSession.findUnique({
       where: { id: sessionId },
@@ -60,25 +80,49 @@ export class InterviewService {
       },
     });
 
-    if (!session) throw new NotFoundException('Session Not FOund');
-    if (session.userId !== userId)
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (session.userId !== userId) {
+      this.logger.warn(
+        `Unauthorized resource access attempt: User [${userId}] tried to access Session [${sessionId}]`,
+      );
       throw new ForbiddenException('Unauthorized access');
+    }
 
     return session;
   }
 
+  /**
+   * Retrieves the specific grading/feedback report for an interview session.
+   * Performs an early resource/ownership check before executing the final query.
+   */
   async getSessionFeedback(sessionId: string, userId: string) {
     const session = await this.prisma.interviewSession.findUnique({
       where: { id: sessionId },
       select: { userId: true },
     });
-    if (!session) throw new NotFoundException('Session not found');
-    if (session.userId !== userId)
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (session.userId !== userId) {
+      this.logger.warn(
+        `Unauthorized resource access attempt: User [${userId}] tried to access Feedback for Session [${sessionId}]`,
+      );
       throw new ForbiddenException('Unauthorized access');
+    }
+
     const report = await this.prisma.feedbackReport.findUnique({
       where: { sessionId },
     });
-    if (!report) throw new NotFoundException('Feedback report not found');
+
+    if (!report) {
+      throw new NotFoundException('Feedback report not found');
+    }
+
     return report;
   }
 }
