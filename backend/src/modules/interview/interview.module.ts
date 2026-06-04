@@ -3,8 +3,12 @@ import { InterviewGateway } from './interview.gateway';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WsJwtGuard } from '../../common/guards/ws-jwt.guard';
+import { InterviewService } from './interview.service';
+import { InterviewController } from './interview.controller';
+import { PrismaModule } from '@/prisma/prisma.module';
 @Module({
   imports: [
+    PrismaModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -13,6 +17,8 @@ import { WsJwtGuard } from '../../common/guards/ws-jwt.guard';
       }),
     }),
   ],
-  providers: [InterviewGateway, WsJwtGuard],
+  providers: [InterviewGateway, WsJwtGuard, InterviewService],
+  controllers: [InterviewController],
+  exports: [InterviewService],
 })
 export class InterviewModule {}
