@@ -24,4 +24,19 @@ export class InterviewController {
   ) {
     return this.interviewService.createSession(req.user.sub, dto);
   }
+
+  @Get('sessions')
+  listSessions(@Req() req: AuthenticatedRequest) {
+    return this.interviewService.listUserSessions(req.user.sub);
+  }
+
+  @Get('sessions/:id')
+  getSession(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.interviewService.getSession(id, req.user.sub);
+  }
+
+  @Get('sessions/:id/feedback')
+  getFeedback(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.interviewService.getSessionFeedback(id, req.user.sub);
+  }
 }
