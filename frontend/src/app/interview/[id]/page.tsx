@@ -1,259 +1,237 @@
+/* cspell:words timeslice */
 'use client';
 
-import React, { useEffect, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { api } from '@/lib/api';
-import Link from 'next/link';
+import { useInterviewStore } from '@/store/interviewStore';
+import { useInterviewSocket } from '@/hooks/useInterviewSocket';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useVAD } from '@/hooks/useVAD';
 
-interface Session {
-  id: string;
-  targetRole: string;
-  difficulty: number;
-  mode: string;
-  createdAt: string;
-  feedbackReport?: {
-    status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-    overallScore?: string;
-  };
-  _count: {
-    questions: number;
-  };
-}
-
-export default function DashboardPage() {
-  const { user, token, loading, logout } = useAuth();
+export default function InterviewRoomPage() {
+  const { id: sessionId } = useParams() as { id: string };
+  const { token, loading } = useAuth();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
 
-  // Primary Component States
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState('');
+  // Optimized Zustand Selectors to isolate component re-render vectors
+  const transcript = useInterviewStore((state) => state.transcript);
+  const streamingText = useInterviewStore((state) => state.streamingText);
+  const currentQuestion = useInterviewStore((state) => state.currentQuestion);
+  const sessionClosed = useInterviewStore((state) => state.sessionClosed);
+  const globalError = useInterviewStore((state) => state.error);
+  const setGlobalError = useInterviewStore((state) => state.setError);
+  const resetStore = useInterviewStore((state) => state.resetStore);
 
-  // Modal Configuration States
-  const [showModal, setShowModal] = useState(false);
-  const [targetRole, setTargetRole] = useState('Node.js Backend Engineer');
-  const [difficulty, setDifficulty] = useState<number>(3);
-  const [mode, setMode] = useState<'TEXT' | 'VOICE'>('VOICE');
+  const [micActive, setMicActive] = useState(false);
+  const [rmsVolume, setRmsVolume] = useState(0);
 
-  // Route Authentication Protection Guard
+  // Auth Enforcer Guard
   useEffect(() => {
     if (!loading && !token) {
       router.push('/login');
     }
   }, [token, loading, router]);
 
-  // Network Fetch Synchronization with AbortController Integration
-  useEffect(() => {
-    if (!token) return;
+  // Persistent Bidirectional WebSocket Gateway Integration
+  const { sendAudioChunk, signalSpeechEnded, endSession } = useInterviewSocket(
+    token || '',
+    sessionId
+  );
 
-    const controller = new AbortController();
-    
-    async function loadDashboardData() {
+  // Memoized callback handler avoiding sub-hook dependency breaks
+  const handleSpeechEnd = useCallback(() => {
+    if (currentQuestion?.questionId) {
+      signalSpeechEnded(currentQuestion.questionId);
+    }
+  }, [currentQuestion, signalSpeechEnded]);
+
+  const handleVolumeTick = useCallback((rms: number) => {
+    setRmsVolume(rms);
+  }, []);
+
+  // VAD Audio Engine Initialization Node
+  const { startAnalysis, stopAnalysis } = useVAD({
+    onSpeechStart: useCallback(() => console.log('[VAD] Speech Connection Registered'), []),
+    onSpeechEnd: handleSpeechEnd,
+    onVolumeTick: handleVolumeTick,
+    silenceThresholdMs: 1500,
+    volumeThreshold: 0.015,
+  });
+
+  // MediaRecorder Stream Capture Segment Node
+  const { startRecording, stopRecording } = useAudioRecorder({
+    onChunk: useCallback((blob: Blob) => {
+      sendAudioChunk(blob);
+    }, [sendAudioChunk]),
+    timesliceMs: 250,
+  });
+
+  const toggleMic = async () => {
+    if (micActive) {
+      stopRecording();
+      stopAnalysis();
+      setMicActive(false);
+      setRmsVolume(0);
+    } else {
       try {
-        setFetchError('');
-        const res = await api.get('/interview/sessions', { signal: controller.signal });
-        setSessions(res.data);
-      } catch (err: unknown) {
-        if (axios.isCancel(err)) {
-          console.log('Rogue concurrent fetch operation successfully aborted.');
-          return;
-        }
-        setFetchError('Failed to synchronize your interview profile history. Please try again.');
-        console.error('Dashboard synchronization failure:', err);
-      } finally {
-        setSessionsLoading(false);
+        const stream = await startRecording();
+        await startAnalysis(stream);
+        setMicActive(true);
+      } catch (_err) { 
+        // Prefixed with underscore to satisfy no-unused-vars rule safely
+        setGlobalError('Hardware microphone configuration failed. Verify system permissions.');
       }
     }
-
-    loadDashboardData();
-
-    return () => {
-      controller.abort();
-    };
-  }, [token]);
-
-  const handleStartSession = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (isPending) return;
-
-    startTransition(async () => {
-      try {
-        const res = await api.post('/interview/sessions', {
-          targetRole: targetRole.trim(),
-          difficulty,
-          mode,
-        });
-        
-        setShowModal(false);
-        router.push(`/interview/${res.data.id}`);
-      } catch (err: unknown) {
-        console.error('Session orchestration launch failure:', err);
-        setFetchError('Failed to spin up interview execution thread.');
-      }
-    });
   };
 
-  if (loading || !user) {
+  // Safe unmount context cleanup lifecycle ring
+  useEffect(() => {
+    return () => {
+      stopRecording();
+      stopAnalysis();
+      resetStore();
+    };
+  }, [stopRecording, stopAnalysis, resetStore]);
+
+  // Session Close Navigation Monitor
+  useEffect(() => {
+    if (sessionClosed) {
+      router.push(`/feedback/${sessionId}`);
+    }
+  }, [sessionClosed, sessionId, router]);
+
+  // Memoized performance styles for animated visual loops
+  const scaleStyle = useMemo(() => ({
+    transform: `scale(${1 + rmsVolume * 2.0})`,
+    opacity: Math.max(0.05, 0.4 - rmsVolume),
+  }), [rmsVolume]);
+
+  if (loading || !token) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center" role="status" aria-live="polite">
-        <span className="text-zinc-500 animate-pulse text-sm font-semibold tracking-wider">LOADING SECURE SHELL...</span>
+        <span className="text-zinc-500 animate-pulse text-sm font-semibold tracking-wider">INITIALIZING STREAM GATEWAY...</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans">
-      <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white" aria-hidden="true">A</div>
-          <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-50 to-zinc-400 bg-clip-text text-transparent">Antigravity Prep</span>
-        </div>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans select-none">
+      {/* Top Application Header */}
+      <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-4">
-          <span className="text-xs text-zinc-400 font-medium">Hello, <strong className="text-zinc-200">{user.displayName}</strong></span>
-          <button onClick={logout} className="text-xs font-semibold px-3 py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-400 transition-colors cursor-pointer">Sign Out</button>
+          <span className="text-xs px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded font-bold font-mono">LIVE ASSESSOR STREAM</span>
+          <span className="text-xs text-zinc-500 font-mono">ROOM_ID: {sessionId.toUpperCase()}</span>
         </div>
+        <button
+          onClick={() => endSession()}
+          className="px-4 py-2 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-900/40 text-xs font-semibold text-red-400 transition-colors cursor-pointer animate-fade-in"
+        >
+          Wrap Session
+        </button>
       </header>
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-10">
-        {fetchError && (
-          <div role="alert" className="p-4 mb-6 bg-red-950/40 border border-red-900/50 rounded-xl text-sm text-red-400">
-            {fetchError}
+      {/* Main Execution Framework Layout Box */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden max-w-6xl w-full mx-auto px-6 py-8 gap-6 h-[calc(100vh-140px)]">
+        
+        {/* Left Column: Live Transcript stream */}
+        <main className="flex-1 flex flex-col rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden h-full">
+          {/* Complies with accessible standards using role configuration and polite notification profiles */}
+          <div className="flex-1 p-6 overflow-y-auto space-y-6" role="log" aria-live="polite">
+            {transcript.length === 0 && (
+              <div className="h-full flex items-center justify-center text-center text-zinc-500 text-sm">
+                Awaiting connection framework initialization pipeline...
+              </div>
+            )}
+            
+            {transcript.map((msg, idx) => (
+              <article
+                key={idx}
+                className={`flex flex-col max-w-[80%] ${msg.role === 'candidate' ? 'ml-auto items-end' : 'mr-auto items-start'}`}
+              >
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">
+                  {msg.role === 'candidate' ? 'Candidate (You)' : 'Interviewer'}
+                </span>
+                <div
+                  className={`px-4 py-3 rounded-2xl text-sm leading-relaxed border ${
+                    msg.role === 'candidate'
+                      ? 'bg-zinc-950 border-zinc-850 text-zinc-50'
+                      : 'bg-indigo-600/5 border-indigo-500/20 text-indigo-100'
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </article>
+            ))}
+
+            {streamingText && (
+              <div className="flex flex-col max-w-[80%] items-start mr-auto">
+                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
+                  Interviewer Synthesizing Response...
+                </span>
+                <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed border bg-indigo-600/5 border-indigo-500/20 text-indigo-200">
+                  {streamingText}
+                  <span className="inline-block w-1.5 h-3.5 bg-indigo-500 animate-pulse ml-0.5 align-middle" aria-hidden="true" />
+                </div>
+              </div>
+            )}
           </div>
-        )}
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
-          <div>
-            <h1 className="text-4xl font-extrabold text-zinc-50 mb-2">Practice Dashboard</h1>
-            <p className="text-sm text-zinc-400">Challenge yourself with dynamic technical and situational interviewer response streams.</p>
-          </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-sm shadow-lg shadow-indigo-600/10 transition-all cursor-pointer text-center whitespace-nowrap"
-          >
-            Start New Mock Interview
-          </button>
-        </div>
-
-        <section aria-labelledby="history-heading">
-          <h2 id="history-heading" className="text-lg font-bold text-zinc-200 mb-6">Recent Sessions</h2>
-          
-          {sessionsLoading ? (
-            <div className="py-20 text-center text-zinc-600 text-sm tracking-wide animate-pulse" role="status">
-              Synchronizing history ledger...
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className="py-20 rounded-2xl bg-zinc-900/40 border border-zinc-850 border-dashed text-center">
-              <p className="text-sm text-zinc-500 mb-4">You haven&#39;t initiated any practice assessment slots yet.</p>
-              <button onClick={() => setShowModal(true)} className="text-xs font-semibold text-indigo-400 hover:underline cursor-pointer">Launch your first attempt</button>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {sessions.map((session) => (
-                <article key={session.id} className="p-6 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all flex flex-col justify-between shadow-sm">
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="text-xs text-zinc-500 font-mono">ID: {session.id.slice(-8).toUpperCase()}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                        session.feedbackReport?.status === 'COMPLETED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                        session.feedbackReport?.status === 'PROCESSING' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400 animate-pulse' :
-                        'bg-zinc-950 border-zinc-800 text-zinc-500'
-                      }`}>
-                        {session.feedbackReport?.status === 'COMPLETED' ? `Score: ${session.feedbackReport.overallScore || 'N/A'}` : (session.feedbackReport?.status || 'PENDING')}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-extrabold text-zinc-100 mb-1">{session.targetRole}</h3>
-                    <div className="flex gap-3 text-xs text-zinc-400 mb-6">
-                      <span>Diff: <strong className="text-zinc-200">{session.difficulty}/5</strong></span>
-                      <span>•</span>
-                      <span>Questions: <strong className="text-zinc-200">{session._count.questions}</strong></span>
-                      <span>•</span>
-                      <span className="capitalize">{session.mode.toLowerCase()} mode</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-zinc-950 pt-4">
-                    <span className="text-xs text-zinc-500">{new Date(session.createdAt).toLocaleDateString()}</span>
-                    {session.feedbackReport?.status === 'COMPLETED' ? (
-                      <Link href={`/feedback/${session.id}`} className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 focus:outline-none">View Report &rarr;</Link>
-                    ) : (
-                      <Link href={`/interview/${session.id}`} className="text-xs font-semibold text-zinc-400 hover:text-zinc-300 focus:outline-none">Enter Room &rarr;</Link>
-                    )}
-                  </div>
-                </article>
-              ))}
+          {/* Localized Error Banner Overlay */}
+          {globalError && (
+            <div role="alert" className="p-4 bg-red-950/30 border-t border-red-900/40 text-xs text-red-400 flex items-center justify-between">
+              <span>{globalError}</span>
+              <button onClick={() => setGlobalError(null)} className="text-zinc-500 hover:text-zinc-300 font-bold font-mono cursor-pointer">Dismiss</button>
             </div>
           )}
-        </section>
-      </main>
+        </main>
 
-      {/* Setup Dialogue Modal Overlay Configuration */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 shadow-3xl" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-zinc-800 p-6 relative overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="absolute -top-32 -left-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" aria-hidden="true" />
-            <div className="relative z-10">
-              <h3 className="text-xl font-bold text-zinc-50 mb-1">Session Setup</h3>
-              <p className="text-xs text-zinc-400 mb-6">Configure the AI interviewer targets.</p>
+        {/* Right Column: Hardware Audio Telemetry Context Console */}
+        <aside className="w-full md:w-80 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-center justify-between gap-8 h-full md:h-auto">
+          <div className="w-full text-center">
+            <h2 className="font-bold text-zinc-200 text-lg mb-1">Audio Controls</h2>
+            <p className="text-xs text-zinc-500">Toggle your microphone connection to process answers.</p>
+          </div>
 
-              <form onSubmit={handleStartSession} className="space-y-4">
-                <div>
-                  <label htmlFor="role-input" className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Target Role</label>
-                  <input
-                    id="role-input"
-                    type="text" required
-                    value={targetRole} onChange={(e) => setTargetRole(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="difficulty-input" className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Difficulty (1-5)</label>
-                  <input
-                    id="difficulty-input"
-                    type="number" min="1" max="5" required
-                    value={difficulty} onChange={(e) => setDifficulty(parseInt(e.target.value, 10) || 3)}
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Communication Mode</span>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button" onClick={() => setMode('VOICE')}
-                      className={`py-2 px-4 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${mode === 'VOICE' ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400' : 'bg-zinc-950 border-zinc-850 text-zinc-500'}`}
-                    >
-                      Voice STT/TTS
-                    </button>
-                    <button
-                      type="button" onClick={() => setMode('TEXT')}
-                      className={`py-2 px-4 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${mode === 'TEXT' ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400' : 'bg-zinc-950 border-zinc-850 text-zinc-500'}`}
-                    >
-                      Text Chat
-                    </button>
-                  </div>
-                </div>
+          {/* Pulsing Visual Wave Mapper Nodes */}
+          <div className="relative w-44 h-44 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center overflow-hidden">
+            {micActive && (
+              <div
+                style={scaleStyle}
+                className="absolute w-36 h-36 border-2 border-indigo-500/30 rounded-full transition-transform duration-75 ease-out"
+                aria-hidden="true"
+              />
+            )}
+            
+            <button
+              onClick={toggleMic}
+              aria-label={micActive ? 'Deactivate microphone input stream' : 'Activate microphone input stream'}
+              className={`w-28 h-28 rounded-full flex items-center justify-center relative z-10 transition-all cursor-pointer ${
+                micActive
+                  ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20'
+                  : 'bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'
+              }`}
+            >
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={micActive ? "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" : "M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"} />
+              </svg>
+            </button>
+          </div>
 
-                <div className="flex gap-3 justify-end pt-4">
-                  <button
-                    type="button" onClick={() => setShowModal(false)}
-                    className="py-2.5 px-4 rounded-lg bg-zinc-950 hover:bg-zinc-850 border border-zinc-800 text-xs font-semibold text-zinc-400 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit" disabled={isPending}
-                    className="py-2.5 px-5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white disabled:bg-zinc-800 disabled:text-zinc-600 cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    {isPending ? 'Starting...' : 'Launch Session'}
-                  </button>
-                </div>
-              </form>
+          <div className="w-full text-center">
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">TELEMETRY MONITOR STATUS</span>
+            <div className="mt-2 text-xs font-semibold" role="status">
+              {micActive ? (
+                <span className="text-emerald-400 flex items-center justify-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" aria-hidden="true" /> Audio Stream Online
+                </span>
+              ) : (
+                <span className="text-zinc-500">Audio Stream Offline</span>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        </aside>
+      </div>
     </div>
   );
 }
