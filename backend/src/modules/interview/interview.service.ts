@@ -48,4 +48,22 @@ export class InterviewService {
       },
     });
   }
+
+  async getSession(sessionId: string, userId: string) {
+    const session = await this.prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        questions: {
+          orderBy: { sequenceNumber: 'asc' },
+        },
+        feedbackReport: true,
+      },
+    });
+
+    if (!session) throw new NotFoundException('Session Not FOund');
+    if (session.userId !== userId)
+      throw new ForbiddenException('Unauthorized access');
+
+    return session;
+  }
 }
