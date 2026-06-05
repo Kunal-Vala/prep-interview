@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
@@ -13,8 +13,8 @@ interface RegistrationErrorPayload {
 
 export default function RegisterPage() {
   const { login } = useAuth();
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,35 +33,34 @@ export default function RegisterPage() {
     return true;
   };
 
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
     if (!validateForm()) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-    startTransition(async () => {
-      try {
-        const response = await api.post('/auth/register', {
-          displayName: displayName.trim(),
-          email: email.trim().toLowerCase(),
-          password
-        });
+    try {
+      const response = await api.post('/auth/register', {
+        displayName: displayName.trim(),
+        email: email.trim().toLowerCase(),
+        password
+      });
 
-        await login(response.data.accessToken, response.data.user);
-        
-        router.push('/onboarding/welcome');
-        router.refresh();
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err)) {
-          const serverError = err as import('axios').AxiosError<RegistrationErrorPayload>;
-          setError(serverError.response?.data?.message || 'Registration transaction rejected.');
-        } else if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError('A severe application failure occurred.');
-        }
+      login(response.data.accessToken, response.data.user);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const serverError = err as import('axios').AxiosError<RegistrationErrorPayload>;
+        setError(serverError.response?.data?.message || 'Registration transaction rejected.');
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('A severe application failure occurred.');
       }
-    });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -134,10 +133,10 @@ export default function RegisterPage() {
 
             <button
               type="submit" 
-              disabled={isPending}
+              disabled={isSubmitting}
               className="w-full py-3 px-4 rounded-lg bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
-              {isPending ? 'Creating Account...' : 'Create Account'}
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
