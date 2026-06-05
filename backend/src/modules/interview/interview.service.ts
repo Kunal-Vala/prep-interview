@@ -123,6 +123,38 @@ export class InterviewService {
       throw new NotFoundException('Feedback report not found');
     }
 
-    return report;
+    // Safely parse raw LLM response if available to extract extra fields
+    let hiringRecommendation = 'PENDING';
+    let hiringRationale = '';
+    let studyRecommendations: string[] = [];
+
+    if (report.rawLlmResponse) {
+      try {
+        const cleaned = report.rawLlmResponse
+          .replace(/^```json\s*/i, '')
+          .replace(/```\s*$/, '')
+          .trim();
+        const parsed = JSON.parse(cleaned) as {
+          hiringRecommendation?: string;
+          hiringRationale?: string;
+          studyRecommendations?: string[];
+        };
+        hiringRecommendation = parsed.hiringRecommendation || 'PENDING';
+        hiringRationale = parsed.hiringRationale || '';
+        studyRecommendations = parsed.studyRecommendations || [];
+      } catch (e) {
+        this.logger.error(
+          'Failed to parse raw LLM response for extra feedback fields:',
+          e,
+        );
+      }
+    }
+
+    return {
+      ...report,
+      hiringRecommendation,
+      hiringRationale,
+      studyRecommendations,
+    };
   }
 }
