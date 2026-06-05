@@ -1,49 +1,48 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import axios from 'axios';
+
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 
 export default function LoginPage() {
     const { login } = useAuth();
-    const router = useRouter();
-    const [isPending, startTransition] = useTransition();
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
 
-        // Prevent execution if already processing inside transition
-        if (isPending) return;
+        if (isSubmitting) return;
+        setIsSubmitting(true);
 
-        startTransition(async () => {
-            try {
-                const response = await api.post('/auth/login', {
-                    email: email.trim().toLowerCase(),
-                    password
-                });
+        try {
+            const response = await api.post('/auth/login', {
+                email: email.trim().toLowerCase(),
+                password
+            });
 
-                await login(response.data.accessToken, response.data.user);
-
-                // Securely route user forward into application dashboard space
-                router.push('/dashboard');
-                router.refresh();
-            } catch (err: unknown) {
-                // Log errors to centralized tracing services (e.g., Sentry) instead of leaking stack traces
-                console.error('Authentication processing failure:', err);
-                if (err instanceof Error) {
-                    const fallbackMessage = 'Invalid email or password. Please try again.';
-                    setError(err.message || fallbackMessage);
-
-                }
+            login(response.data.accessToken, response.data.user);
+        } catch (err: unknown) {
+            console.error('Authentication processing failure:', err);
+            const fallbackMessage = 'Invalid email or password. Please try again.';
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || fallbackMessage);
+            } else if (err instanceof Error) {
+                setError(err.message || fallbackMessage);
+            } else {
+                setError(fallbackMessage);
             }
-        });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -109,10 +108,10 @@ export default function LoginPage() {
 
                         <button
                             type="submit"
-                            disabled={isPending}
+                            disabled={isSubmitting}
                             className="w-full py-3 px-4 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
                         >
-                            {isPending ? 'Authenticating...' : 'Sign In'}
+                            {isSubmitting ? 'Authenticating...' : 'Sign In'}
                         </button>
                     </form>
 
