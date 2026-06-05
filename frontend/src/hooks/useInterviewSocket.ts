@@ -61,6 +61,16 @@ export function useInterviewSocket(token: string, sessionId: string) {
     sequenceIdRef.current = 0;
   }, [sessionId]);
 
+  const sendTextMessage = useCallback((text: string) => {
+    if (!socketRef.current?.connected) {
+      console.warn('[Network Core] Text message dropped: Socket connection is currently offline.');
+      return;
+    }
+    // Immediately show the candidate's message in the transcript
+    storeActions.appendTranscript({ role: 'candidate', content: text });
+    socketRef.current.emit('user-message', { sessionId, content: text });
+  }, [sessionId]);
+
   const endSession = useCallback((reason: 'user-quit' | 'time-limit' = 'user-quit') => {
     socketRef.current?.emit('session-end', { sessionId, reason });
   }, [sessionId]);
@@ -72,11 +82,7 @@ export function useInterviewSocket(token: string, sessionId: string) {
     // Register decoupled state processing pipelines using static store updaters
     socketInstance.on('next-question', (data: NextQuestionPayload) => {
       storeActions.setCurrentQuestion(data);
-      storeActions.appendTranscript({ 
-        role: 'interviewer', 
-        content: data.questionText, 
-        questionCategory: data.category 
-      });
+      // Note: transcript entry is added by finalizeAIResponse via ai-response-end event
     });
 
     socketInstance.on('transcription-ready', (data: TranscriptionReadyPayload) => {
@@ -113,5 +119,5 @@ export function useInterviewSocket(token: string, sessionId: string) {
     };
   }, [token, sessionId]);
 
-  return { sendAudioChunk, signalSpeechEnded, endSession };
+  return { sendAudioChunk, signalSpeechEnded, endSession, sendTextMessage };
 }
