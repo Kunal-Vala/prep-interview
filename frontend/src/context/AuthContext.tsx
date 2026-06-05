@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -23,30 +23,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // 1. Lazy initializer for Token
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
-    }
-    return null;
-  });
+  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true); // Start as true
 
-  // 2. Lazy initializer for User Object
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    // Safely execute client-side state reconstruction after hydration
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+
+    if (storedToken && storedUser) {
+      setToken(storedToken);
       try {
-        const storedUser = localStorage.getItem('user');
-        return storedUser ? JSON.parse(storedUser) : null;
+        setUser(JSON.parse(storedUser));
       } catch (error) {
         console.error('Failed to parse user session on boot:', error);
-        return null;
       }
     }
-    return null;
-  });
-
-  // Since state is computed instantly on boot, loading is immediately false if data exists
-  const [loading, setLoading] = useState<boolean>(false);
+    setLoading(false);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const login = useCallback((newToken: string, newUser: User) => {
     localStorage.setItem('token', newToken);
