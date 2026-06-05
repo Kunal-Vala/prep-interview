@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { Server, ServerOptions } from 'socket.io';
+import { Request, Response, NextFunction } from 'express';
 
 class CustomIoAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions): Server {
@@ -24,6 +25,13 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useWebSocketAdapter(new CustomIoAdapter(app));
+
+  // HTTP Request Logger Middleware for debugging API connection
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log(`[HTTP API] ${req.method} ${req.url}`);
+    next();
+  });
+
   app.enableCors({
     origin: process.env.CORS_ORIGINS?.split(',') ?? ['http://localhost:3000'],
     credentials: true,
