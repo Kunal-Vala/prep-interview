@@ -9,7 +9,10 @@ async function bootstrap() {
   console.log('--- Testing LLM Stream (GitHub Models) ---');
 
   const messages = [
-    { role: 'user' as const, content: 'I am a fresher interested in graphic design' }
+    {
+      role: 'user' as const,
+      content: 'I am a fresher interested in graphic design',
+    },
   ];
 
   process.stdout.write('AI Response: ');
@@ -22,4 +25,4 @@ async function bootstrap() {
   await app.close();
 }
 
-bootstrap();
+void bootstrap();
