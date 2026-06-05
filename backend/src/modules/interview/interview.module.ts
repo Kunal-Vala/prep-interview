@@ -6,9 +6,14 @@ import { WsJwtGuard } from '../../common/guards/ws-jwt.guard';
 import { InterviewService } from './interview.service';
 import { InterviewController } from './interview.controller';
 import { PrismaModule } from '@/prisma/prisma.module';
+import { AiModule } from '../ai/ai.module';
+import { QueueModule } from '../queue/queue.module';
+
 @Module({
   imports: [
     PrismaModule,
+    AiModule,
+    QueueModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
