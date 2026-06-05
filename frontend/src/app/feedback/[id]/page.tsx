@@ -24,6 +24,7 @@ interface QuestionFeedbackItem {
 }
 
 interface FeedbackReport {
+    status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
     overallScore: string;
     technicalScore: string;
     communicationScore: string;
@@ -128,6 +129,35 @@ export default function FeedbackReportPage() {
                 <main className="max-w-md text-center" role="alert">
                     <h2 className="text-2xl font-bold text-red-500 mb-2">Failed to Load Report</h2>
                     <p className="text-sm text-zinc-400 mb-6">The evaluation job is either still processing or failed during server-side compilation compilation updates.</p>
+                    <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-700">
+                        Return to Dashboard
+                    </Link>
+                </main>
+            </div>
+        );
+    }
+
+    if (report.status !== 'COMPLETED') {
+        return (
+            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
+                <main className="max-w-md text-center" role="alert">
+                    {report.status === 'FAILED' ? (
+                        <>
+                            <h2 className="text-2xl font-bold text-red-500 mb-2">Grading Failed</h2>
+                            <p className="text-sm text-zinc-400 mb-6">Something went wrong while grading your mock interview session. Please try again or contact support.</p>
+                        </>
+                    ) : (
+                        <>
+                            <h2 className="text-2xl font-bold text-indigo-400 mb-2 animate-pulse">Grading In Progress</h2>
+                            <p className="text-sm text-zinc-400 mb-6">Your mock interview is being graded by our AI assessor. This usually takes 5-15 seconds. Please refresh the page shortly.</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white focus:outline-none mr-3 cursor-pointer"
+                            >
+                                Refresh Page
+                            </button>
+                        </>
+                    )}
                     <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-700">
                         Return to Dashboard
                     </Link>
