@@ -195,12 +195,12 @@ export default function InterviewRoomPage() {
       {/* Top Application Header */}
       <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-4">
-          <span className="text-xs px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded font-bold font-mono">LIVE ASSESSOR STREAM</span>
-          <span className="text-xs text-zinc-500 font-mono">ROOM_ID: {sessionId.toUpperCase()}</span>
+          <span className="text-base px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded font-bold font-mono">LIVE ASSESSOR STREAM</span>
+          <span className="text-base text-zinc-300 font-mono">ROOM_ID: {sessionId.toUpperCase()}</span>
         </div>
         <button
           onClick={() => endSession()}
-          className="px-4 py-2 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-900/40 text-xs font-semibold text-red-400 transition-colors cursor-pointer animate-fade-in"
+          className="px-5 py-2.5 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-900/40 text-base font-bold text-red-400 transition-colors cursor-pointer animate-fade-in"
         >
           Wrap Session
         </button>
@@ -214,7 +214,7 @@ export default function InterviewRoomPage() {
           {/* Complies with accessible standards using role configuration and polite notification profiles */}
           <div className="flex-1 p-6 overflow-y-auto space-y-6" role="log" aria-live="polite">
             {transcript.length === 0 && (
-              <div className="h-full flex items-center justify-center text-center text-zinc-500 text-sm">
+              <div className="h-full flex items-center justify-center text-center text-zinc-400 text-base">
                 Awaiting connection framework initialization pipeline...
               </div>
             )}
@@ -224,11 +224,11 @@ export default function InterviewRoomPage() {
                 key={idx}
                 className={`flex flex-col max-w-[80%] ${msg.role === 'candidate' ? 'ml-auto items-end' : 'mr-auto items-start'}`}
               >
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">
+                <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-1.5">
                   {msg.role === 'candidate' ? 'Candidate (You)' : 'Interviewer'}
                 </span>
                 <div
-                  className={`px-4 py-3 rounded-2xl text-sm leading-relaxed border ${
+                  className={`px-4 py-3 rounded-2xl text-base leading-relaxed border ${
                     msg.role === 'candidate'
                       ? 'bg-zinc-950 border-zinc-850 text-zinc-50'
                       : 'bg-indigo-600/5 border-indigo-500/20 text-indigo-100'
@@ -241,10 +241,10 @@ export default function InterviewRoomPage() {
 
             {streamingText && (
               <div className="flex flex-col max-w-[80%] items-start mr-auto">
-                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
+                <span className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
                   Interviewer Synthesizing Response...
                 </span>
-                <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed border bg-indigo-600/5 border-indigo-500/20 text-indigo-100">
+                <div className="px-4 py-3 rounded-2xl text-base leading-relaxed border bg-indigo-600/5 border-indigo-500/20 text-indigo-100">
                   {streamingText}
                   <span className="inline-block w-1.5 h-3.5 bg-indigo-500 animate-pulse ml-0.5 align-middle" aria-hidden="true" />
                 </div>
@@ -253,10 +253,10 @@ export default function InterviewRoomPage() {
 
             {isProcessing && !streamingText && (
               <div className="flex flex-col max-w-[80%] items-start mr-auto">
-                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
+                <span className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
                   Interviewer is transcribing & thinking...
                 </span>
-                <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed border bg-zinc-900 border-zinc-850 text-zinc-400 flex items-center gap-2">
+                <div className="px-4 py-3 rounded-2xl text-base leading-relaxed border bg-zinc-900 border-zinc-850 text-zinc-400 flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                   <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
                   <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -267,9 +267,9 @@ export default function InterviewRoomPage() {
 
           {/* Localized Error Banner Overlay */}
           {globalError && (
-            <div role="alert" className="p-4 bg-red-950/30 border-t border-red-900/40 text-xs text-red-400 flex items-center justify-between">
+            <div role="alert" className="p-4 bg-red-950/30 border-t border-red-900/40 text-sm text-red-400 flex items-center justify-between">
               <span>{globalError}</span>
-              <button onClick={() => setGlobalError(null)} className="text-zinc-500 hover:text-zinc-300 font-bold font-mono cursor-pointer">Dismiss</button>
+              <button onClick={() => setGlobalError(null)} className="text-zinc-400 hover:text-zinc-200 font-bold font-mono cursor-pointer">Dismiss</button>
             </div>
           )}
 
@@ -282,12 +282,12 @@ export default function InterviewRoomPage() {
               placeholder={isProcessing ? "Processing response..." : "Type your answer here..."}
               disabled={isProcessing}
               rows={2}
-              className="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-base text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               onClick={handleSendText}
               disabled={!textInput.trim() || isProcessing}
-              className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              className="px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-base font-bold text-white disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               Send
             </button>
@@ -297,8 +297,8 @@ export default function InterviewRoomPage() {
         {/* Right Column: Hardware Audio Telemetry Context Console */}
         <aside className="w-full md:w-80 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-center justify-between gap-8 h-full md:h-auto">
           <div className="w-full text-center">
-            <h2 className="font-bold text-zinc-200 text-lg mb-1">Audio Controls</h2>
-            <p className="text-xs text-zinc-500">Toggle your microphone connection to process answers.</p>
+            <h2 className="font-extrabold text-zinc-100 text-2xl mb-1.5">Audio Controls</h2>
+            <p className="text-base text-zinc-300">Toggle your microphone connection to process answers.</p>
           </div>
 
           {/* Pulsing Visual Wave Mapper Nodes */}
@@ -328,18 +328,18 @@ export default function InterviewRoomPage() {
           </div>
 
           <div className="w-full text-center">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">TELEMETRY MONITOR STATUS</span>
-            <div className="mt-2 text-xs font-semibold" role="status">
+            <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest block">TELEMETRY MONITOR STATUS</span>
+            <div className="mt-2 text-base font-semibold" role="status">
               {isProcessing ? (
-                <span className="text-indigo-400 flex items-center justify-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" aria-hidden="true" /> Processing Response...
+                <span className="text-indigo-400 flex items-center justify-center gap-1.5 text-base font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse" aria-hidden="true" /> Processing Response...
                 </span>
               ) : micActive ? (
-                <span className="text-emerald-400 flex items-center justify-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" aria-hidden="true" /> Audio Stream Online
+                <span className="text-emerald-400 flex items-center justify-center gap-1.5 text-base font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" aria-hidden="true" /> Audio Stream Online
                 </span>
               ) : (
-                <span className="text-zinc-500">Audio Stream Offline</span>
+                <span className="text-zinc-400 text-base">Audio Stream Offline</span>
               )}
             </div>
           </div>

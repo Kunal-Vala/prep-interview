@@ -70,21 +70,21 @@ export default function RegisterPage() {
         
         <div className="relative z-10">
           <header className="mb-8">
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-zinc-50 to-zinc-400 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-zinc-50 to-zinc-400 bg-clip-text text-transparent mb-2">
               Create Account
             </h1>
-            <p className="text-sm text-zinc-400">Sign up to access structured AI mock interviews.</p>
+            <p className="text-base text-zinc-400">Sign up to access structured AI mock interviews.</p>
           </header>
           
           {error && (
-            <div role="alert" className="p-3 mb-6 bg-red-950/40 border border-red-800/60 rounded-lg text-xs text-red-400">
+            <div role="alert" className="p-3.5 mb-6 bg-red-950/40 border border-red-800/60 rounded-lg text-sm text-red-400">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="name-field" className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+              <label htmlFor="name-field" className="block text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">
                 Display Name
               </label>
               <input
@@ -94,13 +94,13 @@ export default function RegisterPage() {
                 autoComplete="name"
                 value={displayName} 
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-50 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors"
                 placeholder="Alex Mercer"
               />
             </div>
 
             <div>
-              <label htmlFor="email-field" className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+              <label htmlFor="email-field" className="block text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">
                 Email Address
               </label>
               <input
@@ -110,13 +110,13 @@ export default function RegisterPage() {
                 autoComplete="email"
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-50 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password-field" className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+              <label htmlFor="password-field" className="block text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2">
                 Password
               </label>
               <input
@@ -126,7 +126,7 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-50 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 transition-colors"
                 placeholder="••••••••"
               />
             </div>
@@ -134,15 +134,15 @@ export default function RegisterPage() {
             <button
               type="submit" 
               disabled={isSubmitting}
-              className="w-full py-3 px-4 rounded-lg bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              className="w-full py-3.5 px-4 rounded-lg bg-emerald-600 text-base font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
-          <footer className="mt-8 text-center text-xs text-zinc-500">
+          <footer className="mt-8 text-center text-sm text-zinc-400">
             Already have an account?{' '}
-            <Link href="/login" className="text-emerald-400 hover:underline focus:outline-none focus:text-emerald-300">
+            <Link href="/login" className="text-emerald-400 hover:underline focus:outline-none focus:text-emerald-300 font-semibold">
               Sign In
             </Link>
           </footer>

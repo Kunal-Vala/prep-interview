@@ -52,16 +52,16 @@ export default function LoginPage() {
 
                 <div className="relative z-10">
                     <header className="mb-8">
-                        <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-zinc-50 to-zinc-400 bg-clip-text text-transparent mb-2">
+                        <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-zinc-50 to-zinc-400 bg-clip-text text-transparent mb-2">
                             Welcome Back
                         </h1>
-                        <p className="text-sm text-zinc-400">Sign in to resume coaching your mock interview prep.</p>
+                        <p className="text-base text-zinc-400">Sign in to resume coaching your mock interview prep.</p>
                     </header>
 
                     {error && (
                         <div
                             role="alert"
-                            className="p-3 mb-6 bg-red-950/40 border border-red-800/60 rounded-lg text-xs text-red-400 animate-fade-in"
+                            className="p-3.5 mb-6 bg-red-950/40 border border-red-800/60 rounded-lg text-sm text-red-400 animate-fade-in"
                         >
                             {error}
                         </div>
@@ -71,7 +71,7 @@ export default function LoginPage() {
                         <div>
                             <label
                                 htmlFor="email-input"
-                                className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                                className="block text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2"
                             >
                                 Email Address
                             </label>
@@ -82,7 +82,7 @@ export default function LoginPage() {
                                 autoComplete="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-50 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="you@example.com"
                             />
                         </div>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                         <div>
                             <label
                                 htmlFor="password-input"
-                                className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2"
+                                className="block text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-2"
                             >
                                 Password
                             </label>
@@ -101,7 +101,7 @@ export default function LoginPage() {
                                 autoComplete="current-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-50 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                                className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-50 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -109,15 +109,15 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full py-3 px-4 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                            className="w-full py-3.5 px-4 rounded-lg bg-indigo-600 text-base font-semibold text-white hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? 'Authenticating...' : 'Sign In'}
                         </button>
                     </form>
 
-                    <footer className="mt-8 text-center text-xs text-zinc-500">
+                    <footer className="mt-8 text-center text-sm text-zinc-400">
                         Don&#39;t have an account?{' '}
-                        <Link href="/register" className="text-indigo-400 hover:underline focus:outline-none focus:text-indigo-300">
+                        <Link href="/register" className="text-indigo-400 hover:underline focus:outline-none focus:text-indigo-300 font-semibold">
                             Sign Up
                         </Link>
                     </footer>

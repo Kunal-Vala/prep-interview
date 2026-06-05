@@ -112,8 +112,8 @@ export default function DashboardPage() {
           <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-50 to-zinc-400 bg-clip-text text-transparent">Antigravity Prep</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-xs text-zinc-400 font-medium">Hello, <strong className="text-zinc-200">{user.displayName}</strong></span>
-          <button onClick={logout} className="text-xs font-semibold px-3 py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-400 transition-colors cursor-pointer">Sign Out</button>
+          <span className="text-sm text-zinc-400 font-medium">Hello, <strong className="text-zinc-200">{user.displayName}</strong></span>
+          <button onClick={logout} className="text-sm font-semibold px-3.5 py-2 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-350 transition-colors cursor-pointer">Sign Out</button>
         </div>
       </header>
 
@@ -127,27 +127,27 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-extrabold text-zinc-50 mb-2">Practice Dashboard</h1>
-            <p className="text-sm text-zinc-400">Challenge yourself with dynamic technical and situational interviewer response streams.</p>
+            <p className="text-base text-zinc-300">Challenge yourself with dynamic technical and situational interviewer response streams.</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-sm shadow-lg shadow-indigo-600/10 transition-all cursor-pointer text-center whitespace-nowrap"
+            className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-base shadow-lg shadow-indigo-600/10 transition-all cursor-pointer text-center whitespace-nowrap"
           >
             Start New Mock Interview
           </button>
         </div>
 
         <section aria-labelledby="history-heading">
-          <h2 id="history-heading" className="text-lg font-bold text-zinc-200 mb-6">Recent Sessions</h2>
+          <h2 id="history-heading" className="text-xl font-bold text-zinc-200 mb-6">Recent Sessions</h2>
           
           {sessionsLoading ? (
-            <div className="py-20 text-center text-zinc-600 text-sm tracking-wide animate-pulse" role="status">
+            <div className="py-20 text-center text-zinc-500 text-base tracking-wide animate-pulse" role="status">
               Synchronizing history ledger...
             </div>
           ) : sessions.length === 0 ? (
             <div className="py-20 rounded-2xl bg-zinc-900/40 border border-zinc-850 border-dashed text-center">
-              <p className="text-sm text-zinc-500 mb-4">You haven&#39;t initiated any practice assessment slots yet.</p>
-              <button onClick={() => setShowModal(true)} className="text-xs font-semibold text-indigo-400 hover:underline cursor-pointer">Launch your first attempt</button>
+              <p className="text-base text-zinc-400 mb-4">You haven&#39;t initiated any practice assessment slots yet.</p>
+              <button onClick={() => setShowModal(true)} className="text-sm font-bold text-indigo-400 hover:underline cursor-pointer">Launch your first attempt</button>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -155,17 +155,17 @@ export default function DashboardPage() {
                 <article key={session.id} className="p-6 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all flex flex-col justify-between shadow-sm">
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="text-xs text-zinc-500 font-mono">ID: {session.id.slice(-8).toUpperCase()}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      <span className="text-sm text-zinc-400 font-mono">ID: {session.id.slice(-8).toUpperCase()}</span>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
                         session.feedbackReport?.status === 'COMPLETED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                         session.feedbackReport?.status === 'PROCESSING' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400 animate-pulse' :
-                        'bg-zinc-950 border-zinc-800 text-zinc-500'
+                        'bg-zinc-950 border-zinc-800 text-zinc-400'
                       }`}>
                         {session.feedbackReport?.status === 'COMPLETED' ? `Score: ${session.feedbackReport.overallScore || 'N/A'}` : (session.feedbackReport?.status || 'PENDING')}
                       </span>
                     </div>
-                    <h3 className="text-lg font-extrabold text-zinc-100 mb-1">{session.targetRole}</h3>
-                    <div className="flex gap-3 text-xs text-zinc-400 mb-6">
+                    <h3 className="text-xl font-extrabold text-zinc-100 mb-1">{session.targetRole}</h3>
+                    <div className="flex gap-3 text-sm text-zinc-400 mb-6">
                       <span>Diff: <strong className="text-zinc-200">{session.difficulty}/5</strong></span>
                       <span>•</span>
                       <span>Questions: <strong className="text-zinc-200">{session._count.questions}</strong></span>
@@ -175,11 +175,11 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex items-center justify-between border-t border-zinc-950 pt-4">
-                    <span className="text-xs text-zinc-500">{new Date(session.createdAt).toLocaleDateString()}</span>
+                    <span className="text-sm text-zinc-400">{new Date(session.createdAt).toLocaleDateString()}</span>
                     {session.feedbackReport?.status === 'COMPLETED' ? (
-                      <Link href={`/feedback/${session.id}`} className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 focus:outline-none">View Report &rarr;</Link>
+                      <Link href={`/feedback/${session.id}`} className="text-sm font-bold text-indigo-400 hover:text-indigo-300 focus:outline-none">View Report &rarr;</Link>
                     ) : (
-                      <Link href={`/interview/${session.id}`} className="text-xs font-semibold text-zinc-400 hover:text-zinc-300 focus:outline-none">Enter Room &rarr;</Link>
+                      <Link href={`/interview/${session.id}`} className="text-sm font-bold text-zinc-300 hover:text-zinc-100 focus:outline-none">Enter Room &rarr;</Link>
                     )}
                   </div>
                 </article>
@@ -195,40 +195,40 @@ export default function DashboardPage() {
           <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-zinc-800 p-6 relative overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="absolute -top-32 -left-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" aria-hidden="true" />
             <div className="relative z-10">
-              <h3 className="text-xl font-bold text-zinc-50 mb-1">Session Setup</h3>
-              <p className="text-xs text-zinc-400 mb-6">Configure the AI interviewer targets.</p>
+              <h3 className="text-2xl font-bold text-zinc-50 mb-1">Session Setup</h3>
+              <p className="text-sm text-zinc-400 mb-6">Configure the AI interviewer targets.</p>
 
-              <form onSubmit={handleStartSession} className="space-y-4">
+              <form onSubmit={handleStartSession} className="space-y-5">
                 <div>
-                  <label htmlFor="role-input" className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Target Role</label>
+                  <label htmlFor="role-input" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Target Role</label>
                   <input
                     id="role-input"
                     type="text" required
                     value={targetRole} onChange={(e) => setTargetRole(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="difficulty-input" className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Difficulty (1-5)</label>
+                  <label htmlFor="difficulty-input" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Difficulty (1-5)</label>
                   <input
                     id="difficulty-input"
                     type="number" min="1" max="5" required
                     value={difficulty} onChange={(e) => setDifficulty(parseInt(e.target.value, 10) || 3)}
-                    className="w-full px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Communication Mode</span>
+                  <span className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Communication Mode</span>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button" onClick={() => setMode('VOICE')}
-                      className={`py-2 px-4 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${mode === 'VOICE' ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400' : 'bg-zinc-950 border-zinc-850 text-zinc-500'}`}
+                      className={`py-3 px-4 rounded-lg text-sm font-bold border transition-all cursor-pointer ${mode === 'VOICE' ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400' : 'bg-zinc-950 border-zinc-850 text-zinc-500'}`}
                     >
                       Voice STT/TTS
                     </button>
                     <button
                       type="button" onClick={() => setMode('TEXT')}
-                      className={`py-2 px-4 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${mode === 'TEXT' ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400' : 'bg-zinc-950 border-zinc-850 text-zinc-500'}`}
+                      className={`py-3 px-4 rounded-lg text-sm font-bold border transition-all cursor-pointer ${mode === 'TEXT' ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400' : 'bg-zinc-950 border-zinc-850 text-zinc-500'}`}
                     >
                       Text Chat
                     </button>
@@ -238,13 +238,13 @@ export default function DashboardPage() {
                 <div className="flex gap-3 justify-end pt-4">
                   <button
                     type="button" onClick={() => setShowModal(false)}
-                    className="py-2.5 px-4 rounded-lg bg-zinc-950 hover:bg-zinc-850 border border-zinc-800 text-xs font-semibold text-zinc-400 cursor-pointer"
+                    className="py-3 px-5 rounded-lg bg-zinc-950 hover:bg-zinc-850 border border-zinc-800 text-sm font-bold text-zinc-400 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit" disabled={isPending}
-                    className="py-2.5 px-5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white disabled:bg-zinc-800 disabled:text-zinc-600 cursor-pointer disabled:cursor-not-allowed"
+                    className="py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white disabled:bg-zinc-800 disabled:text-zinc-600 cursor-pointer disabled:cursor-not-allowed"
                   >
                     {isPending ? 'Starting...' : 'Launch Session'}
                   </button>

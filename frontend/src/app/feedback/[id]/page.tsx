@@ -147,7 +147,7 @@ export default function FeedbackReportPage() {
     if (loading || (!report && !error)) {
         return (
             <div className="min-h-screen bg-zinc-950 flex items-center justify-center" role="status" aria-live="polite">
-                <span className="text-zinc-500 animate-pulse text-sm font-semibold tracking-wider">COMPILING EVALUATIONS METRICS...</span>
+                <span className="text-zinc-400 animate-pulse text-base font-bold tracking-wider">COMPILING EVALUATIONS METRICS...</span>
             </div>
         );
     }
@@ -157,8 +157,8 @@ export default function FeedbackReportPage() {
             <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
                 <main className="max-w-md text-center" role="alert">
                     <h2 className="text-2xl font-bold text-red-500 mb-2">Failed to Load Report</h2>
-                    <p className="text-sm text-zinc-400 mb-6">The evaluation job is either still processing or failed during server-side compilation compilation updates.</p>
-                    <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-700">
+                    <p className="text-base text-zinc-400 mb-6">The evaluation job is either still processing or failed during server-side compilation compilation updates.</p>
+                    <Link href="/dashboard" className="px-6 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-sm font-bold text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-700">
                         Return to Dashboard
                     </Link>
                 </main>
@@ -173,21 +173,21 @@ export default function FeedbackReportPage() {
                     {report.status === 'FAILED' ? (
                         <>
                             <h2 className="text-2xl font-bold text-red-500 mb-2">Grading Failed</h2>
-                            <p className="text-sm text-zinc-400 mb-6">Something went wrong while grading your mock interview session. Please try again or contact support.</p>
+                            <p className="text-base text-zinc-400 mb-6">Something went wrong while grading your mock interview session. Please try again or contact support.</p>
                         </>
                     ) : (
                         <>
                             <h2 className="text-2xl font-bold text-indigo-400 mb-2 animate-pulse">Grading In Progress</h2>
-                            <p className="text-sm text-zinc-400 mb-6">Your mock interview is being graded by our AI assessor. This usually takes 5-15 seconds. Please refresh the page shortly.</p>
+                            <p className="text-base text-zinc-400 mb-6">Your mock interview is being graded by our AI assessor. This usually takes 5-15 seconds. Please refresh the page shortly.</p>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white focus:outline-none mr-3 cursor-pointer"
+                                className="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white focus:outline-none mr-3 cursor-pointer"
                             >
                                 Refresh Page
                             </button>
                         </>
                     )}
-                    <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-700">
+                    <Link href="/dashboard" className="px-6 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-sm font-bold text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-700">
                         Return to Dashboard
                     </Link>
                 </main>
@@ -202,13 +202,13 @@ export default function FeedbackReportPage() {
         <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-20 select-none">
             <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-40">
                 <div className="flex items-center gap-3">
-                    <Link href="/dashboard" className="text-xs font-semibold text-zinc-500 hover:text-zinc-300 focus:outline-none">
+                    <Link href="/dashboard" className="text-base font-bold text-zinc-400 hover:text-zinc-200 focus:outline-none">
                         &larr; Back
                     </Link>
-                    <span className="text-xs text-zinc-800" aria-hidden="true">|</span>
-                    <h1 className="text-xs font-bold text-zinc-400 font-mono tracking-wider">ASSESSMENT LEDGER ANALYTICS</h1>
+                    <span className="text-base text-zinc-850" aria-hidden="true">|</span>
+                    <h1 className="text-base font-extrabold text-zinc-200 font-mono tracking-wider">ASSESSMENT LEDGER ANALYTICS</h1>
                 </div>
-                <Link href="/dashboard" className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition-colors focus:outline-none">
+                <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-base font-bold text-white transition-colors focus:outline-none">
                     Go to Dashboard
                 </Link>
             </header>
@@ -216,7 +216,7 @@ export default function FeedbackReportPage() {
             <main className="max-w-5xl w-full mx-auto px-6 mt-12 grid gap-8 md:grid-cols-3">
                 {/* Radial Rating Card Section */}
                 <section className="md:col-span-1 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-center justify-center text-center shadow-sm">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-6">Overall Rating</h2>
+                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-6">Overall Rating</h2>
 
                     <div className="relative w-36 h-36 flex items-center justify-center animate-fade-in" aria-label={`Overall score is ${radialMetrics.scoreNum.toFixed(1)} out of 10`}>
                         <svg className="w-full h-full transform -rotate-90" aria-hidden="true">
@@ -234,8 +234,8 @@ export default function FeedbackReportPage() {
                     </div>
 
                     <div className="mt-8">
-                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Recommendation</span>
-                        <span className={`text-sm font-extrabold uppercase tracking-wide px-3 py-1.5 rounded-lg border ${isRecommended ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+                        <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest block mb-2.5">Recommendation</span>
+                        <span className={`text-lg font-extrabold uppercase tracking-wide px-4.5 py-2.5 rounded-lg border ${isRecommended ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
                             }`}>
                             {recommendationText}
                         </span>
@@ -244,15 +244,15 @@ export default function FeedbackReportPage() {
 
                 {/* Dimension Breakdown Card Section */}
                 <section className="md:col-span-2 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col justify-center gap-5 shadow-sm">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">Score Dimension Breakdown</h2>
+                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-2">Score Dimension Breakdown</h2>
 
                     {scoreDimensions.map((bar) => {
                         const numericValue = parseFloat(bar.score || '0') || 0;
                         return (
                             <div key={bar.id} className="space-y-1.5">
-                                <div className="flex justify-between text-xs font-semibold">
-                                    <span className="text-zinc-300">{bar.label}</span>
-                                    <span className="text-indigo-400 font-mono">{numericValue.toFixed(1)}/10.0</span>
+                                <div className="flex justify-between text-base font-semibold">
+                                    <span className="text-zinc-200">{bar.label}</span>
+                                    <span className="text-indigo-400 font-mono font-bold">{numericValue.toFixed(1)}/10.0</span>
                                 </div>
                                 <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden" aria-hidden="true">
                                     <div
@@ -267,20 +267,20 @@ export default function FeedbackReportPage() {
 
                 {/* Hiring Rationale Section */}
                 <section className="md:col-span-3 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">Executive Rationale</h2>
-                    <p className="text-sm leading-relaxed text-zinc-300 whitespace-pre-line">{report.hiringRationale}</p>
+                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-3">Executive Rationale</h2>
+                    <p className="text-base leading-relaxed text-zinc-300 whitespace-pre-line">{report.hiringRationale}</p>
                 </section>
 
                 {/* Core Strengths and Opportunities Matrix */}
                 <div className="md:col-span-3 grid gap-6 md:grid-cols-2">
                     {/* Strengths Board */}
                     <section className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">
-                        <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-4 flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true" /> STRENGTHS ARCHIVE
+                        <h2 className="text-base font-bold uppercase tracking-wider text-emerald-400 mb-4 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400" aria-hidden="true" /> STRENGTHS ARCHIVE
                         </h2>
                         <ul className="space-y-3">
                             {report.strengths.map((str, index) => (
-                                <li key={`str-${index}`} className="text-sm text-zinc-300 flex items-start gap-2.5 leading-relaxed">
+                                <li key={`str-${index}`} className="text-base text-zinc-200 flex items-start gap-2.5 leading-relaxed">
                                     <span className="text-emerald-500 font-bold select-none" aria-hidden="true">&bull;</span>
                                     <span>{str}</span>
                                 </li>
@@ -290,25 +290,25 @@ export default function FeedbackReportPage() {
 
                     {/* Opportunities Board */}
                     <section className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">
-                        <h2 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-4 flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden="true" /> REQUIRED OPPORTUNITY DELTAS
+                        <h2 className="text-base font-bold uppercase tracking-wider text-amber-400 mb-4 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-400" aria-hidden="true" /> REQUIRED OPPORTUNITY DELTAS
                         </h2>
                         <div className="space-y-5">
                             {report.improvements.map((imp, index) => (
                                 <div key={`imp-${index}`} className="space-y-1.5 border-b border-zinc-850 pb-4 last:border-b-0 last:pb-0">
                                     <div className="flex items-center gap-2 justify-between">
-                                        <span className="text-xs font-bold text-zinc-200">{imp.area}</span>
-                                        <span className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase border tracking-wider ${imp.severity === 'high' ? 'bg-red-500/10 border-red-500/25 text-red-400' :
+                                        <span className="text-base font-extrabold text-zinc-100">{imp.area}</span>
+                                        <span className={`px-2.5 py-1 rounded text-xs font-extrabold uppercase border tracking-wider ${imp.severity === 'high' ? 'bg-red-500/10 border-red-500/25 text-red-400' :
                                                 imp.severity === 'medium' ? 'bg-amber-500/10 border-amber-500/25 text-amber-400' :
                                                     'bg-zinc-800 border-zinc-700 text-zinc-400'
                                             }`}>
                                             {imp.severity} severity
                                         </span>
                                     </div>
-                                    <p className="text-xs text-zinc-400 leading-relaxed">{imp.detail}</p>
-                                    <div className="bg-zinc-950 p-2.5 rounded-lg border border-zinc-850 text-[11px] leading-relaxed">
-                                        <strong className="text-indigo-400 block mb-1 tracking-wide font-semibold">Actionable Advice</strong>
-                                        <span className="text-zinc-400">{imp.actionableAdvice}</span>
+                                    <p className="text-base text-zinc-300 leading-relaxed">{imp.detail}</p>
+                                    <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-850 text-sm leading-relaxed">
+                                        <strong className="text-indigo-400 block mb-1 tracking-wide font-bold">Actionable Advice</strong>
+                                        <span className="text-zinc-300">{imp.actionableAdvice}</span>
                                     </div>
                                 </div>
                             ))}
@@ -319,8 +319,8 @@ export default function FeedbackReportPage() {
                 {/* Detailed Question & Response Log Section */}
                 <section className="md:col-span-3 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm space-y-6">
                     <div>
-                        <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Detailed Question & Response Log</h2>
-                        <p className="text-xs text-zinc-400">Review your answers question-by-question alongside detailed AI criticism and suggestions for improvement.</p>
+                        <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-1">Detailed Question & Response Log</h2>
+                        <p className="text-base text-zinc-300">Review your answers question-by-question alongside detailed AI criticism and suggestions for improvement.</p>
                     </div>
 
                     <div className="space-y-4">
@@ -344,19 +344,19 @@ export default function FeedbackReportPage() {
                                             className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-900/40 transition-colors focus:outline-none"
                                         >
                                             <div className="flex flex-wrap items-center gap-3">
-                                                <span className="text-xs font-mono font-bold text-indigo-400">Q{q.sequenceNumber}</span>
-                                                <span className="text-xs font-bold text-zinc-300">{fb?.questionSummary || q.category}</span>
-                                                <span className="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase border tracking-wider bg-zinc-800 border-zinc-700 text-zinc-400">
+                                                <span className="text-base font-mono font-bold text-indigo-400">Q{q.sequenceNumber}</span>
+                                                <span className="text-base font-bold text-zinc-200">{fb?.questionSummary || q.category}</span>
+                                                <span className="px-2.5 py-0.5 rounded text-xs font-bold uppercase border tracking-wider bg-zinc-800 border-zinc-700 text-zinc-400">
                                                     {q.category}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 {fb && (
                                                     <>
-                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase border tracking-wider ${qualityColor}`}>
+                                                        <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold uppercase border tracking-wider ${qualityColor}`}>
                                                             {fb.answerQuality}
                                                         </span>
-                                                        <span className="text-xs font-mono font-bold text-zinc-400">
+                                                        <span className="text-base font-mono font-extrabold text-zinc-300">
                                                             {(fb.score || 0).toFixed(1)}/10.0
                                                         </span>
                                                     </>
@@ -376,48 +376,48 @@ export default function FeedbackReportPage() {
                                         {isExpanded && (
                                             <div className="px-5 pb-5 border-t border-zinc-850 bg-zinc-950/20 space-y-4 pt-4 animate-fade-in">
                                                 {/* The Question Asked */}
-                                                <div className="space-y-1">
-                                                    <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Question Asked</h3>
-                                                    <div className="text-sm text-zinc-200 leading-relaxed bg-zinc-900/80 p-3 rounded-lg border border-zinc-850">
+                                                <div className="space-y-1.5">
+                                                    <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Question Asked</h3>
+                                                    <div className="text-base text-zinc-150 leading-relaxed bg-zinc-900/80 p-4 rounded-lg border border-zinc-850 font-medium">
                                                         {q.questionText}
                                                     </div>
                                                 </div>
 
                                                 {/* Candidate Response */}
-                                                <div className="space-y-1">
+                                                <div className="space-y-1.5">
                                                     <div className="flex justify-between items-center">
-                                                        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Your Response</h3>
+                                                        <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Your Response</h3>
                                                         {q.answerDuration && (
-                                                            <span className="text-[9px] font-mono text-zinc-600 font-semibold uppercase">
+                                                            <span className="text-xs font-mono text-zinc-500 font-semibold uppercase">
                                                                 Duration: {q.answerDuration}s
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="text-sm text-zinc-300 leading-relaxed bg-zinc-900/40 p-3 rounded-lg border border-zinc-850 whitespace-pre-line italic">
+                                                    <div className="text-base text-zinc-200 leading-relaxed bg-zinc-900/40 p-4 rounded-lg border border-zinc-850 whitespace-pre-line italic">
                                                         {q.userAnswer || 'No response provided.'}
                                                     </div>
                                                 </div>
 
                                                 {/* AI Assessment & Criticism */}
                                                 {fb && (
-                                                    <div className="space-y-3 pt-2 border-t border-zinc-850">
-                                                        <div className="space-y-1">
-                                                            <h3 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">AI Assessment</h3>
-                                                            <p className="text-xs text-zinc-300 leading-relaxed">{fb.comment}</p>
+                                                    <div className="space-y-4 pt-3 border-t border-zinc-850">
+                                                        <div className="space-y-1.5">
+                                                            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest">AI Assessment</h3>
+                                                            <p className="text-sm text-zinc-200 leading-relaxed">{fb.comment}</p>
                                                         </div>
 
                                                         {/* Suggestions for Improvement (Dynamic Fallback) */}
-                                                        <div className="space-y-1">
-                                                            <h3 className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">How to Improve</h3>
-                                                            <p className="text-xs text-zinc-400 leading-relaxed bg-amber-500/5 p-3 rounded-lg border border-amber-500/10">
+                                                        <div className="space-y-1.5">
+                                                            <h3 className="text-sm font-bold text-amber-400 uppercase tracking-widest">How to Improve</h3>
+                                                            <p className="text-sm text-zinc-300 leading-relaxed bg-amber-500/5 p-4 rounded-lg border border-amber-500/10">
                                                                 {fb.suggestionsForImprovement || 'Structure your response clearly. Make sure to detail specific engineering constraints, tech details, and trade-offs rather than staying high-level.'}
                                                             </p>
                                                         </div>
 
                                                         {/* Model Response / Outline (Dynamic Fallback) */}
-                                                        <div className="space-y-1">
-                                                            <h3 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Model Outline</h3>
-                                                            <div className="text-xs text-zinc-400 leading-relaxed bg-emerald-500/5 p-3 rounded-lg border border-emerald-500/10 whitespace-pre-line">
+                                                        <div className="space-y-1.5">
+                                                            <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-widest">Model Outline</h3>
+                                                            <div className="text-sm text-zinc-300 leading-relaxed bg-emerald-500/5 p-4 rounded-lg border border-emerald-500/10 whitespace-pre-line">
                                                                 {fb.idealResponseOutline || '1. Introduce the core concept directly and define key terms.\n2. Explain the architectural setup and how components interact.\n3. Mention engineering trade-offs (scalability, complexity, costs) to demonstrate senior-level maturity.'}
                                                             </div>
                                                         </div>
@@ -429,7 +429,7 @@ export default function FeedbackReportPage() {
                                 );
                             })
                         ) : (
-                            <div className="text-sm text-zinc-500 text-center py-6 border border-dashed border-zinc-850 rounded-xl">
+                            <div className="text-base text-zinc-500 text-center py-6 border border-dashed border-zinc-850 rounded-xl">
                                 No questions were recorded in this session.
                             </div>
                         )}
@@ -438,10 +438,10 @@ export default function FeedbackReportPage() {
 
                 {/* Study Targets Chips Section */}
                 <section className="md:col-span-3 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-4">Recommended Curated Study Focus Clusters</h2>
+                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-4">Recommended Curated Study Focus Clusters</h2>
                     <div className="flex flex-wrap gap-2.5">
                         {report.studyRecommendations.map((study, index) => (
-                            <span key={`study-${index}`} className="px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-850 text-xs font-medium text-zinc-300 tracking-wide">
+                            <span key={`study-${index}`} className="px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-850 text-sm font-medium text-zinc-200 tracking-wide">
                                 {study}
                             </span>
                         ))}
