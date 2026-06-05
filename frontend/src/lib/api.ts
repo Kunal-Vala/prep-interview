@@ -28,30 +28,17 @@ api.interceptors.request.use(
 );
 
 
-// // Response interceptor for intelligent network failure handling
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     const originalRequest = error.config;
-
-//     // Handle 401 Unauthorized (Expired Tokens) and protect against infinite loop
-//     if (error.response?.status === 401 && !originalRequest._retry) {
-//       originalRequest._retry = true;
-      
-//       try {
-//         // Example logic for token refresh token exchange
-//         const newAccessToken = await refreshAuthToken();
-//         localStorage.setItem('token', newAccessToken);
-//         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-//         return api(originalRequest); 
-//       } catch (refreshError) {
-//         // If refresh fails, clear cache and force user expulsion to login view
-//         if (typeof window !== 'undefined') {
-//           localStorage.removeItem('token');
-//           window.location.href = '/login';
-//         }
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
+// Response interceptor for handling token expiration/revocation (401 Unauthorized)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
