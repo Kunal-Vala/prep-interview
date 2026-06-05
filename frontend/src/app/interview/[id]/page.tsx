@@ -25,6 +25,7 @@ export default function InterviewRoomPage() {
 
   const [micActive, setMicActive] = useState(false);
   const [rmsVolume, setRmsVolume] = useState(0);
+  const [textInput, setTextInput] = useState('');
 
   // Auth Enforcer Guard
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function InterviewRoomPage() {
   }, [token, loading, router]);
 
   // Persistent Bidirectional WebSocket Gateway Integration
-  const { sendAudioChunk, signalSpeechEnded, endSession } = useInterviewSocket(
+  const { sendAudioChunk, signalSpeechEnded, endSession, sendTextMessage } = useInterviewSocket(
     token || '',
     sessionId
   );
@@ -78,10 +79,22 @@ export default function InterviewRoomPage() {
         const stream = await startRecording();
         await startAnalysis(stream);
         setMicActive(true);
-      } catch (_err) { 
-        // Prefixed with underscore to satisfy no-unused-vars rule safely
+      } catch { 
         setGlobalError('Hardware microphone configuration failed. Verify system permissions.');
       }
+    }
+  };
+
+  const handleSendText = () => {
+    if (!textInput.trim()) return;
+    sendTextMessage(textInput.trim());
+    setTextInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendText();
     }
   };
 
@@ -184,6 +197,25 @@ export default function InterviewRoomPage() {
               <button onClick={() => setGlobalError(null)} className="text-zinc-500 hover:text-zinc-300 font-bold font-mono cursor-pointer">Dismiss</button>
             </div>
           )}
+
+          {/* Text Mode Input Area */}
+          <div className="p-4 border-t border-zinc-800 flex gap-3 items-end">
+            <textarea
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your answer here..."
+              rows={2}
+              className="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none transition-colors"
+            />
+            <button
+              onClick={handleSendText}
+              disabled={!textInput.trim()}
+              className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              Send
+            </button>
+          </div>
         </main>
 
         {/* Right Column: Hardware Audio Telemetry Context Console */}
