@@ -1,12 +1,12 @@
 /* cspell:words timeslice */
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useInterviewStore } from '@/store/interviewStore';
 import { useInterviewSocket } from '@/hooks/useInterviewSocket';
-import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useSpeechRecognition, SpeechRecognitionErrorEvent } from '@/hooks/useSpeechRecognition';
 import { useVAD } from '@/hooks/useVAD';
 
 export default function InterviewRoomPage() {
@@ -22,10 +22,13 @@ export default function InterviewRoomPage() {
   const globalError = useInterviewStore((state) => state.error);
   const setGlobalError = useInterviewStore((state) => state.setError);
   const resetStore = useInterviewStore((state) => state.resetStore);
+  const isProcessing = useInterviewStore((state) => state.isProcessing);
+  const setProcessing = useInterviewStore((state) => state.setProcessing);
 
   const [micActive, setMicActive] = useState(false);
   const [rmsVolume, setRmsVolume] = useState(0);
   const [textInput, setTextInput] = useState('');
+  const wasMicActiveRef = useRef(false);
 
   // Auth Enforcer Guard
   useEffect(() => {
@@ -35,49 +38,70 @@ export default function InterviewRoomPage() {
   }, [token, loading, router]);
 
   // Persistent Bidirectional WebSocket Gateway Integration
-  const { sendAudioChunk, signalSpeechEnded, endSession, sendTextMessage } = useInterviewSocket(
+  const { endSession, sendTextMessage } = useInterviewSocket(
     token || '',
     sessionId
   );
-
-  // Memoized callback handler avoiding sub-hook dependency breaks
-  const handleSpeechEnd = useCallback(() => {
-    if (currentQuestion?.questionId) {
-      signalSpeechEnded(currentQuestion.questionId);
-    }
-  }, [currentQuestion, signalSpeechEnded]);
 
   const handleVolumeTick = useCallback((rms: number) => {
     setRmsVolume(rms);
   }, []);
 
-  // VAD Audio Engine Initialization Node
-  const { startAnalysis, stopAnalysis } = useVAD({
-    onSpeechStart: useCallback(() => console.log('[VAD] Speech Connection Registered'), []),
-    onSpeechEnd: handleSpeechEnd,
-    onVolumeTick: handleVolumeTick,
-    silenceThresholdMs: 1500,
-    volumeThreshold: 0.015,
+  // Speech Recognition Event Node
+  const { startListening, stopListening } = useSpeechRecognition({
+    onResult: useCallback((text: string) => {
+      setTextInput(text);
+    }, []),
+    onEnd: useCallback((finalText: string) => {
+      console.log('[SpeechRecognition] Final text captured:', finalText);
+      if (finalText.trim() && currentQuestion?.questionId) {
+        const store = useInterviewStore.getState();
+        if (!store.isProcessing) {
+          store.setProcessing(true);
+          sendTextMessage(finalText.trim());
+          setTextInput('');
+        }
+      }
+    }, [currentQuestion, sendTextMessage]),
+    onError: useCallback((event: SpeechRecognitionErrorEvent) => {
+      console.error('[SpeechRecognition] Error event:', event);
+      if (event.error === 'not-allowed') {
+        setGlobalError('Microphone access denied. Please verify system/browser permissions.');
+      } else if (event.error !== 'aborted') {
+        setGlobalError(`Speech recognition failed: ${event.error}. Please try again.`);
+      }
+    }, [setGlobalError]),
   });
 
-  // MediaRecorder Stream Capture Segment Node
-  const { startRecording, stopRecording } = useAudioRecorder({
-    onChunk: useCallback((blob: Blob) => {
-      sendAudioChunk(blob);
-    }, [sendAudioChunk]),
-    timesliceMs: 250,
+  // VAD Audio Engine Initialization Node
+  const { startAnalysis, stopAnalysis } = useVAD({
+    onSpeechStart: useCallback(() => console.log('[VAD] Speech Start Detected'), []),
+    onSpeechEnd: useCallback(() => {
+      console.log('[VAD] Silence detected (1500ms threshold reached). Finalizing speech...');
+      stopListening(); // Trigger SpeechRecognition end & submission
+    }, [stopListening]),
+    onVolumeTick: handleVolumeTick,
+    silenceThresholdMs: 1500,
+    volumeThreshold: 0.01,
   });
 
   const toggleMic = async () => {
+    if (isProcessing) return;
     if (micActive) {
-      stopRecording();
+      stopListening();
       stopAnalysis();
       setMicActive(false);
       setRmsVolume(0);
     } else {
       try {
-        const stream = await startRecording();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
         await startAnalysis(stream);
+        startListening();
         setMicActive(true);
       } catch { 
         setGlobalError('Hardware microphone configuration failed. Verify system permissions.');
@@ -86,7 +110,8 @@ export default function InterviewRoomPage() {
   };
 
   const handleSendText = () => {
-    if (!textInput.trim()) return;
+    if (!textInput.trim() || isProcessing) return;
+    setProcessing(true);
     sendTextMessage(textInput.trim());
     setTextInput('');
   };
@@ -98,14 +123,51 @@ export default function InterviewRoomPage() {
     }
   };
 
+  // Automatically mute/deactivate mic when processing begins, and restore when it ends
+  useEffect(() => {
+    if (isProcessing) {
+      if (micActive) {
+        wasMicActiveRef.current = true;
+        stopListening();
+        stopAnalysis();
+        setTimeout(() => {
+          setMicActive(false);
+          setRmsVolume(0);
+        }, 0);
+      }
+    } else {
+      if (wasMicActiveRef.current && !micActive) {
+        wasMicActiveRef.current = false;
+        // Reactivate mic
+        (async () => {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+              },
+            });
+            await startAnalysis(stream);
+            startListening();
+            setTimeout(() => {
+              setMicActive(true);
+            }, 0);
+          } catch {
+            setGlobalError('Hardware microphone configuration failed. Verify system permissions.');
+          }
+        })();
+      }
+    }
+  }, [isProcessing, micActive, stopListening, stopAnalysis, startListening, startAnalysis, setGlobalError]);
+
   // Safe unmount context cleanup lifecycle ring
   useEffect(() => {
     return () => {
-      stopRecording();
+      stopListening();
       stopAnalysis();
       resetStore();
     };
-  }, [stopRecording, stopAnalysis, resetStore]);
+  }, [stopListening, stopAnalysis, resetStore]);
 
   // Session Close Navigation Monitor
   useEffect(() => {
@@ -182,9 +244,22 @@ export default function InterviewRoomPage() {
                 <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
                   Interviewer Synthesizing Response...
                 </span>
-                <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed border bg-indigo-600/5 border-indigo-500/20 text-indigo-200">
+                <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed border bg-indigo-600/5 border-indigo-500/20 text-indigo-100">
                   {streamingText}
                   <span className="inline-block w-1.5 h-3.5 bg-indigo-500 animate-pulse ml-0.5 align-middle" aria-hidden="true" />
+                </div>
+              </div>
+            )}
+
+            {isProcessing && !streamingText && (
+              <div className="flex flex-col max-w-[80%] items-start mr-auto">
+                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
+                  Interviewer is transcribing & thinking...
+                </span>
+                <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed border bg-zinc-900 border-zinc-850 text-zinc-400 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               </div>
             )}
@@ -204,13 +279,14 @@ export default function InterviewRoomPage() {
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type your answer here..."
+              placeholder={isProcessing ? "Processing response..." : "Type your answer here..."}
+              disabled={isProcessing}
               rows={2}
-              className="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none transition-colors"
+              className="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               onClick={handleSendText}
-              disabled={!textInput.trim()}
+              disabled={!textInput.trim() || isProcessing}
               className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               Send
@@ -237,8 +313,9 @@ export default function InterviewRoomPage() {
             
             <button
               onClick={toggleMic}
+              disabled={isProcessing}
               aria-label={micActive ? 'Deactivate microphone input stream' : 'Activate microphone input stream'}
-              className={`w-28 h-28 rounded-full flex items-center justify-center relative z-10 transition-all cursor-pointer ${
+              className={`w-28 h-28 rounded-full flex items-center justify-center relative z-10 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 micActive
                   ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20'
                   : 'bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'
@@ -253,7 +330,11 @@ export default function InterviewRoomPage() {
           <div className="w-full text-center">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">TELEMETRY MONITOR STATUS</span>
             <div className="mt-2 text-xs font-semibold" role="status">
-              {micActive ? (
+              {isProcessing ? (
+                <span className="text-indigo-400 flex items-center justify-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" aria-hidden="true" /> Processing Response...
+                </span>
+              ) : micActive ? (
                 <span className="text-emerald-400 flex items-center justify-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" aria-hidden="true" /> Audio Stream Online
                 </span>

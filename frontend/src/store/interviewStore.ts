@@ -9,6 +9,7 @@ interface InterviewState {
   sessionClosed: boolean;
   feedbackJobId: string | null;
   error: string | null;
+  isProcessing: boolean;
 }
 
 interface InterviewActions {
@@ -18,6 +19,7 @@ interface InterviewActions {
   finalizeAIResponse: (fullText: string) => void;
   setSessionClosed: (feedbackJobId: string) => void;
   setError: (message: string | null) => void;
+  setProcessing: (val: boolean) => void;
   resetStore: () => void;
 }
 
@@ -31,6 +33,7 @@ const initialState: InterviewState = {
   sessionClosed: false,
   feedbackJobId: null,
   error: null,
+  isProcessing: false,
 };
 
 export const useInterviewStore = create<InterviewStore>()(
@@ -39,7 +42,7 @@ export const useInterviewStore = create<InterviewStore>()(
       ...initialState,
 
       setCurrentQuestion: (question) => 
-        set({ currentQuestion: question, streamingText: '' }, false, 'setCurrentQuestion'),
+        set({ currentQuestion: question, streamingText: '', isProcessing: false }, false, 'setCurrentQuestion'),
         
       appendTranscript: (message) =>
         set(
@@ -60,6 +63,7 @@ export const useInterviewStore = create<InterviewStore>()(
           (state) => ({
             transcript: [...state.transcript, { role: 'interviewer', content: fullText }],
             streamingText: '',
+            isProcessing: false,
           }),
           false,
           'finalizeAIResponse'
@@ -69,7 +73,10 @@ export const useInterviewStore = create<InterviewStore>()(
         set({ sessionClosed: true, feedbackJobId }, false, 'setSessionClosed'),
         
       setError: (message) => 
-        set({ error: message }, false, 'setError'),
+        set({ error: message, isProcessing: false }, false, 'setError'),
+
+      setProcessing: (val) =>
+        set({ isProcessing: val }, false, 'setProcessing'),
 
       resetStore: () => 
         set(initialState, false, 'resetStore'),

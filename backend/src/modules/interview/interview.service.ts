@@ -101,7 +101,11 @@ export class InterviewService {
   async getSessionFeedback(sessionId: string, userId: string) {
     const session = await this.prisma.interviewSession.findUnique({
       where: { id: sessionId },
-      select: { userId: true },
+      include: {
+        questions: {
+          orderBy: { sequenceNumber: 'asc' },
+        },
+      },
     });
 
     if (!session) {
@@ -155,6 +159,7 @@ export class InterviewService {
       hiringRecommendation,
       hiringRationale,
       studyRecommendations,
+      questions: session.questions,
     };
   }
 }

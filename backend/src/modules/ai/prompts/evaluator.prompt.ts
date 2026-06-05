@@ -36,6 +36,8 @@ interface LlmEvaluationSchema {
     answerQuality: string;
     score: number;
     comment: string;
+    suggestionsForImprovement: string;
+    idealResponseOutline: string;
   }>;
   hiringRecommendation: string;
   hiringRationale: string;
@@ -146,7 +148,9 @@ Weighted average:
       "questionSummary": "Horizontal vs vertical scaling",
       "answerQuality": "strong",
       "score": 8.5,
-      "comment": "Correctly identified the core distinction and gave a practical use case."
+      "comment": "Correctly identified the core distinction and gave a practical use case.",
+      "suggestionsForImprovement": "Discuss specific database partitioning strategies when scaling horizontally, and highlight cost/hardware limits when scaling vertically.",
+      "idealResponseOutline": "1. Definition: Horizontal (adding machines) vs Vertical (adding power to 1 machine).\n2. Trade-offs: Cost, single point of failure, load balancing overhead, data consistency.\n3. Application: When to use which (e.g. database read replicas vs quick hardware upgrades)."
     }
   ],
   "hiringRecommendation": "lean_yes",

@@ -14,6 +14,20 @@ interface ImprovementItem {
     exampleFromSession: string;
 }
 
+interface Question {
+    id: string;
+    sessionId: string;
+    sequenceNumber: number;
+    category: string;
+    questionText: string;
+    userAnswer?: string | null;
+    aiFollowUp?: string | null;
+    llmAnnotation?: string | null;
+    askedAt: string;
+    answeredAt?: string | null;
+    answerDuration?: number | null;
+}
+
 interface QuestionFeedbackItem {
     sequenceNumber: number;
     category: string;
@@ -21,6 +35,8 @@ interface QuestionFeedbackItem {
     answerQuality: string;
     score: number;
     comment: string;
+    suggestionsForImprovement?: string;
+    idealResponseOutline?: string;
 }
 
 interface FeedbackReport {
@@ -37,6 +53,7 @@ interface FeedbackReport {
     hiringRecommendation: string;
     hiringRationale: string;
     studyRecommendations: string[];
+    questions?: Question[];
 }
 
 export default function FeedbackReportPage() {
@@ -46,6 +63,7 @@ export default function FeedbackReportPage() {
 
     const [report, setReport] = useState<FeedbackReport | null>(null);
     const [error, setError] = useState(false);
+    const [expandedQuestionSeq, setExpandedQuestionSeq] = useState<number | null>(1);
 
     // Auth Enforcer Guard
     useEffect(() => {
@@ -113,6 +131,17 @@ export default function FeedbackReportPage() {
             { id: 'code', label: 'Code Design Quality', score: report.codeQualityScore },
             { id: 'behav', label: 'Behavioral Quality (STAR)', score: report.behavioralScore },
         ].filter(dimension => Boolean(dimension.score));
+    }, [report]);
+
+    // Map of sequenceNumber -> QuestionFeedbackItem for O(1) lookup
+    const questionFeedbackMap = useMemo(() => {
+        const map = new Map<number, QuestionFeedbackItem>();
+        if (report?.questionFeedback) {
+            for (const item of report.questionFeedback) {
+                map.set(item.sequenceNumber, item);
+            }
+        }
+        return map;
     }, [report]);
 
     if (loading || (!report && !error)) {
@@ -286,6 +315,126 @@ export default function FeedbackReportPage() {
                         </div>
                     </section>
                 </div>
+
+                {/* Detailed Question & Response Log Section */}
+                <section className="md:col-span-3 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm space-y-6">
+                    <div>
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Detailed Question & Response Log</h2>
+                        <p className="text-xs text-zinc-400">Review your answers question-by-question alongside detailed AI criticism and suggestions for improvement.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        {report.questions && report.questions.length > 0 ? (
+                            report.questions.map((q) => {
+                                const fb = questionFeedbackMap.get(q.sequenceNumber);
+                                const isExpanded = expandedQuestionSeq === q.sequenceNumber;
+                                
+                                // Color badges for answer quality
+                                const qualityColor = fb?.answerQuality === 'strong'
+                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                    : fb?.answerQuality === 'weak'
+                                        ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                                        : 'bg-amber-500/10 border-amber-500/20 text-amber-400';
+
+                                return (
+                                    <div key={q.id} className="border border-zinc-800 bg-zinc-950/40 rounded-xl overflow-hidden transition-all duration-300">
+                                        {/* Accordion Header */}
+                                        <button
+                                            onClick={() => setExpandedQuestionSeq(isExpanded ? null : q.sequenceNumber)}
+                                            className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-900/40 transition-colors focus:outline-none"
+                                        >
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <span className="text-xs font-mono font-bold text-indigo-400">Q{q.sequenceNumber}</span>
+                                                <span className="text-xs font-bold text-zinc-300">{fb?.questionSummary || q.category}</span>
+                                                <span className="px-2 py-0.5 rounded text-[8px] font-extrabold uppercase border tracking-wider bg-zinc-800 border-zinc-700 text-zinc-400">
+                                                    {q.category}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                {fb && (
+                                                    <>
+                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase border tracking-wider ${qualityColor}`}>
+                                                            {fb.answerQuality}
+                                                        </span>
+                                                        <span className="text-xs font-mono font-bold text-zinc-400">
+                                                            {(fb.score || 0).toFixed(1)}/10.0
+                                                        </span>
+                                                    </>
+                                                )}
+                                                <svg
+                                                    className={`w-4 h-4 text-zinc-500 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </button>
+
+                                        {/* Accordion Content */}
+                                        {isExpanded && (
+                                            <div className="px-5 pb-5 border-t border-zinc-850 bg-zinc-950/20 space-y-4 pt-4 animate-fade-in">
+                                                {/* The Question Asked */}
+                                                <div className="space-y-1">
+                                                    <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Question Asked</h3>
+                                                    <div className="text-sm text-zinc-200 leading-relaxed bg-zinc-900/80 p-3 rounded-lg border border-zinc-850">
+                                                        {q.questionText}
+                                                    </div>
+                                                </div>
+
+                                                {/* Candidate Response */}
+                                                <div className="space-y-1">
+                                                    <div className="flex justify-between items-center">
+                                                        <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Your Response</h3>
+                                                        {q.answerDuration && (
+                                                            <span className="text-[9px] font-mono text-zinc-600 font-semibold uppercase">
+                                                                Duration: {q.answerDuration}s
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-sm text-zinc-300 leading-relaxed bg-zinc-900/40 p-3 rounded-lg border border-zinc-850 whitespace-pre-line italic">
+                                                        {q.userAnswer || 'No response provided.'}
+                                                    </div>
+                                                </div>
+
+                                                {/* AI Assessment & Criticism */}
+                                                {fb && (
+                                                    <div className="space-y-3 pt-2 border-t border-zinc-850">
+                                                        <div className="space-y-1">
+                                                            <h3 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">AI Assessment</h3>
+                                                            <p className="text-xs text-zinc-300 leading-relaxed">{fb.comment}</p>
+                                                        </div>
+
+                                                        {/* Suggestions for Improvement (Dynamic Fallback) */}
+                                                        <div className="space-y-1">
+                                                            <h3 className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">How to Improve</h3>
+                                                            <p className="text-xs text-zinc-400 leading-relaxed bg-amber-500/5 p-3 rounded-lg border border-amber-500/10">
+                                                                {fb.suggestionsForImprovement || 'Structure your response clearly. Make sure to detail specific engineering constraints, tech details, and trade-offs rather than staying high-level.'}
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Model Response / Outline (Dynamic Fallback) */}
+                                                        <div className="space-y-1">
+                                                            <h3 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Model Outline</h3>
+                                                            <div className="text-xs text-zinc-400 leading-relaxed bg-emerald-500/5 p-3 rounded-lg border border-emerald-500/10 whitespace-pre-line">
+                                                                {fb.idealResponseOutline || '1. Introduce the core concept directly and define key terms.\n2. Explain the architectural setup and how components interact.\n3. Mention engineering trade-offs (scalability, complexity, costs) to demonstrate senior-level maturity.'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="text-sm text-zinc-500 text-center py-6 border border-dashed border-zinc-850 rounded-xl">
+                                No questions were recorded in this session.
+                            </div>
+                        )}
+                    </div>
+                </section>
 
                 {/* Study Targets Chips Section */}
                 <section className="md:col-span-3 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">

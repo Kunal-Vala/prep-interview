@@ -4,11 +4,13 @@ import { useRef, useCallback, useState, useEffect } from 'react';
 
 interface AudioRecorderOptions {
   onChunk: (chunk: Blob) => void;
+  onStop?: () => void;
   timesliceMs?: number;
 }
 
 export function useAudioRecorder({
   onChunk,
+  onStop,
   timesliceMs = 250,
 }: AudioRecorderOptions) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -20,6 +22,12 @@ export function useAudioRecorder({
   useEffect(() => {
     onChunkRef.current = onChunk;
   }, [onChunk]);
+
+  // Safely persist the latest onStop callback to prevent dependency cycle rerenders
+  const onStopRef = useRef(onStop);
+  useEffect(() => {
+    onStopRef.current = onStop;
+  }, [onStop]);
 
   // Determine the best supported codec at runtime to guarantee cross-browser safety
   const getSupportedMimeType = useCallback((): string => {
@@ -64,6 +72,12 @@ export function useAudioRecorder({
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data && e.data.size > 0) {
           onChunkRef.current(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        if (onStopRef.current) {
+          onStopRef.current();
         }
       };
 
