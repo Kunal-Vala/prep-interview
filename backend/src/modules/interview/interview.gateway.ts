@@ -440,15 +440,35 @@ export class InterviewGateway
     const category = this.inferCategory(fullText);
 
     // 6. Save the new question to DB
-    const newQuestion = await this.prisma.interviewQuestion.create({
-      data: {
-        sessionId,
-        sequenceNumber: nextSeq,
-        category,
-        questionText: fullText,
-        askedAt: new Date(),
-      },
-    });
+    let newQuestion;
+    try {
+      newQuestion = await this.prisma.interviewQuestion.create({
+        data: {
+          sessionId,
+          sequenceNumber: nextSeq,
+          category,
+          questionText: fullText,
+          askedAt: new Date(),
+        },
+      });
+    } catch (dbError: unknown) {
+      const prismaError = dbError as { code?: string };
+      if (prismaError && prismaError.code === 'P2002') {
+        this.logger.warn(
+          `Question already exists for sessionId: ${sessionId}, sequenceNumber: ${nextSeq}. Reusing existing.`,
+        );
+        newQuestion = await this.prisma.interviewQuestion.findUniqueOrThrow({
+          where: {
+            sessionId_sequenceNumber: {
+              sessionId,
+              sequenceNumber: nextSeq,
+            },
+          },
+        });
+      } else {
+        throw dbError;
+      }
+    }
 
     // 7. Emit stream end
     client.emit('ai-response-end', {
@@ -506,15 +526,35 @@ export class InterviewGateway
     );
 
     // Save question to DB
-    const question = await this.prisma.interviewQuestion.create({
-      data: {
-        sessionId,
-        sequenceNumber,
-        category: QuestionCategory.BEHAVIORAL,
-        questionText: fullText,
-        askedAt: new Date(),
-      },
-    });
+    let question;
+    try {
+      question = await this.prisma.interviewQuestion.create({
+        data: {
+          sessionId,
+          sequenceNumber,
+          category: QuestionCategory.BEHAVIORAL,
+          questionText: fullText,
+          askedAt: new Date(),
+        },
+      });
+    } catch (dbError: unknown) {
+      const prismaError = dbError as { code?: string };
+      if (prismaError && prismaError.code === 'P2002') {
+        this.logger.warn(
+          `Question already exists for sessionId: ${sessionId}, sequenceNumber: ${sequenceNumber}. Reusing existing.`,
+        );
+        question = await this.prisma.interviewQuestion.findUniqueOrThrow({
+          where: {
+            sessionId_sequenceNumber: {
+              sessionId,
+              sequenceNumber,
+            },
+          },
+        });
+      } else {
+        throw dbError;
+      }
+    }
 
     client.emit('ai-response-end', {
       sessionId,
