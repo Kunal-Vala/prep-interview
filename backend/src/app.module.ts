@@ -8,6 +8,7 @@ import { UsersModule } from './modules/users/users.module';
 import { InterviewModule } from './modules/interview/interview.module';
 import { AiModule } from './modules/ai/ai.module';
 import { QueueModule } from './modules/queue/queue.module';
+import { ResumeModule } from './modules/resume/resume.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { QueueModule } from './modules/queue/queue.module';
     InterviewModule,
     AiModule,
     QueueModule,
+    ResumeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
