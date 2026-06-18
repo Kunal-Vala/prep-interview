@@ -107,9 +107,15 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans">
       <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white" aria-hidden="true">A</div>
-          <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-50 to-zinc-400 bg-clip-text text-transparent">Antigravity Prep</span>
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white" aria-hidden="true">A</div>
+            <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-50 to-zinc-400 bg-clip-text text-transparent">Antigravity Prep</span>
+          </div>
+          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
+            <Link href="/dashboard" className="text-zinc-100 font-bold hover:text-white transition-colors">Interviews</Link>
+            <Link href="/resume" className="text-zinc-400 font-medium hover:text-zinc-100 transition-colors">Resume Analyzer</Link>
+          </nav>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-zinc-400 font-medium">Hello, <strong className="text-zinc-200">{user.displayName}</strong></span>
