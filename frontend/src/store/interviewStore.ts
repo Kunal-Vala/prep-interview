@@ -14,6 +14,7 @@ interface InterviewState {
 
 interface InterviewActions {
   setCurrentQuestion: (question: NextQuestionPayload) => void;
+  setTranscript: (messages: TranscriptMessage[]) => void;
   appendTranscript: (message: TranscriptMessage) => void;
   appendAITokenDelta: (delta: string) => void;
   finalizeAIResponse: (fullText: string) => void;
@@ -44,6 +45,9 @@ export const useInterviewStore = create<InterviewStore>()(
       setCurrentQuestion: (question) => 
         set({ currentQuestion: question, streamingText: '', isProcessing: false }, false, 'setCurrentQuestion'),
         
+      setTranscript: (messages) =>
+        set({ transcript: messages }, false, 'setTranscript'),
+
       appendTranscript: (message) =>
         set(
           (state) => ({ transcript: [...state.transcript, message] }),
