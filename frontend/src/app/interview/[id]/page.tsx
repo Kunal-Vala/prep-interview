@@ -1,7 +1,7 @@
 /* cspell:words timeslice */
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useInterviewStore } from '@/store/interviewStore';
@@ -28,7 +28,6 @@ export default function InterviewRoomPage() {
   const [micActive, setMicActive] = useState(false);
   const [rmsVolume, setRmsVolume] = useState(0);
   const [textInput, setTextInput] = useState('');
-  const wasMicActiveRef = useRef(false);
 
   // Auth Enforcer Guard
   useEffect(() => {
@@ -77,9 +76,8 @@ export default function InterviewRoomPage() {
   const { startAnalysis, stopAnalysis } = useVAD({
     onSpeechStart: useCallback(() => console.log('[VAD] Speech Start Detected'), []),
     onSpeechEnd: useCallback(() => {
-      console.log('[VAD] Silence detected (1500ms threshold reached). Finalizing speech...');
-      stopListening(); // Trigger SpeechRecognition end & submission
-    }, [stopListening]),
+      console.log('[VAD] Silence detected. Automatic speech finalization is disabled.');
+    }, []),
     onVolumeTick: handleVolumeTick,
     silenceThresholdMs: 1500,
     volumeThreshold: 0.01,
@@ -123,11 +121,10 @@ export default function InterviewRoomPage() {
     }
   };
 
-  // Automatically mute/deactivate mic when processing begins, and restore when it ends
+  // Automatically mute/deactivate mic when processing begins
   useEffect(() => {
     if (isProcessing) {
       if (micActive) {
-        wasMicActiveRef.current = true;
         stopListening();
         stopAnalysis();
         setTimeout(() => {
@@ -135,30 +132,8 @@ export default function InterviewRoomPage() {
           setRmsVolume(0);
         }, 0);
       }
-    } else {
-      if (wasMicActiveRef.current && !micActive) {
-        wasMicActiveRef.current = false;
-        // Reactivate mic
-        (async () => {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-              audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-              },
-            });
-            await startAnalysis(stream);
-            startListening();
-            setTimeout(() => {
-              setMicActive(true);
-            }, 0);
-          } catch {
-            setGlobalError('Hardware microphone configuration failed. Verify system permissions.');
-          }
-        })();
-      }
     }
-  }, [isProcessing, micActive, stopListening, stopAnalysis, startListening, startAnalysis, setGlobalError]);
+  }, [isProcessing, micActive, stopListening, stopAnalysis]);
 
   // Safe unmount context cleanup lifecycle ring
   useEffect(() => {
