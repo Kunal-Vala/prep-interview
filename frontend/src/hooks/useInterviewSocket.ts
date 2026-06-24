@@ -5,6 +5,7 @@ import { Socket } from 'socket.io-client';
 import { getInterviewSocket, disconnectSocket } from '@/lib/socket';
 import { useInterviewStore } from '@/store/interviewStore';
 import type {
+  TranscriptMessage,
   NextQuestionPayload,
   TranscriptionReadyPayload,
   AIResponseStreamPayload,
@@ -18,6 +19,7 @@ import type {
 // we can read them once on file evaluation. This completely bypasses the React render phase!
 const storeActions = {
   setCurrentQuestion: useInterviewStore.getState().setCurrentQuestion,
+  setTranscript: useInterviewStore.getState().setTranscript,
   appendTranscript: useInterviewStore.getState().appendTranscript,
   appendAITokenDelta: useInterviewStore.getState().appendAITokenDelta,
   finalizeAIResponse: useInterviewStore.getState().finalizeAIResponse,
@@ -80,6 +82,10 @@ export function useInterviewSocket(token: string, sessionId: string) {
     socketRef.current = socketInstance;
 
     // Register decoupled state processing pipelines using static store updaters
+    socketInstance.on('session-history', (data: { history: TranscriptMessage[] }) => {
+      storeActions.setTranscript(data.history);
+    });
+
     socketInstance.on('next-question', (data: NextQuestionPayload) => {
       storeActions.setCurrentQuestion(data);
       // Note: transcript entry is added by finalizeAIResponse via ai-response-end event
@@ -110,6 +116,7 @@ export function useInterviewSocket(token: string, sessionId: string) {
     socketInstance.emit('join-session', { sessionId });
 
     return () => {
+      socketInstance.off('session-history');
       socketInstance.off('next-question');
       socketInstance.off('transcription-ready');
       socketInstance.off('ai-response-stream');
