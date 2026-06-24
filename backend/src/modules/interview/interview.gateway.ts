@@ -111,9 +111,34 @@ export class InterviewGateway
         data: { status: SessionStatus.IN_PROGRESS, startedAt: new Date() },
       });
 
-      // 5. If session already has questions (reconnecting), send the last one
+      // 5. If session already has questions (reconnecting), send history and the last one
       if (session.questions.length > 0) {
+        const history = session.questions.flatMap((q) => {
+          const msgs: { role: 'interviewer' | 'candidate'; content: string }[] =
+            [{ role: 'interviewer', content: q.questionText }];
+          if (q.userAnswer) {
+            msgs.push({ role: 'candidate', content: q.userAnswer });
+          }
+          return msgs;
+        });
+        client.emit('session-history', { history });
+
         const lastQ = session.questions[session.questions.length - 1];
+
+        // Check if the last question is already answered
+        if (lastQ.userAnswer !== null) {
+          this.logger.log(
+            `Re-generating next question for session ${data.sessionId} since last question was already answered.`,
+          );
+          await this.streamAIResponse(
+            client,
+            data.sessionId,
+            lastQ.id,
+            lastQ.userAnswer,
+          );
+          return;
+        }
+
         client.emit('next-question', {
           sessionId: data.sessionId,
           questionId: lastQ.id,
