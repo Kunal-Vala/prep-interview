@@ -61,6 +61,9 @@ export default function DashboardPage() {
           console.log('Rogue concurrent fetch operation successfully aborted.');
           return;
         }
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          return;
+        }
         setFetchError('Failed to synchronize your interview profile history. Please try again.');
         console.error('Dashboard synchronization failure:', err);
       } finally {
