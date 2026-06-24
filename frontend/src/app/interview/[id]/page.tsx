@@ -1,13 +1,12 @@
 /* cspell:words timeslice */
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useInterviewStore } from '@/store/interviewStore';
 import { useInterviewSocket } from '@/hooks/useInterviewSocket';
 import { useSpeechRecognition, SpeechRecognitionErrorEvent } from '@/hooks/useSpeechRecognition';
-import { useVAD } from '@/hooks/useVAD';
 
 export default function InterviewRoomPage() {
   const { id: sessionId } = useParams() as { id: string };
@@ -25,9 +24,16 @@ export default function InterviewRoomPage() {
   const isProcessing = useInterviewStore((state) => state.isProcessing);
   const setProcessing = useInterviewStore((state) => state.setProcessing);
 
-  const [micActive, setMicActive] = useState(false);
-  const [rmsVolume, setRmsVolume] = useState(0);
   const [textInput, setTextInput] = useState('');
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // Auto-expand textarea height dynamically matching text content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+  }, [textInput]);
 
   // Auth Enforcer Guard
   useEffect(() => {
@@ -42,12 +48,8 @@ export default function InterviewRoomPage() {
     sessionId
   );
 
-  const handleVolumeTick = useCallback((rms: number) => {
-    setRmsVolume(rms);
-  }, []);
-
   // Speech Recognition Event Node
-  const { startListening, stopListening } = useSpeechRecognition({
+  const { startListening, stopListening, isListening } = useSpeechRecognition({
     onResult: useCallback((text: string) => {
       setTextInput(text);
     }, []),
@@ -72,38 +74,12 @@ export default function InterviewRoomPage() {
     }, [setGlobalError]),
   });
 
-  // VAD Audio Engine Initialization Node
-  const { startAnalysis, stopAnalysis } = useVAD({
-    onSpeechStart: useCallback(() => console.log('[VAD] Speech Start Detected'), []),
-    onSpeechEnd: useCallback(() => {
-      console.log('[VAD] Silence detected. Automatic speech finalization is disabled.');
-    }, []),
-    onVolumeTick: handleVolumeTick,
-    silenceThresholdMs: 1500,
-    volumeThreshold: 0.01,
-  });
-
-  const toggleMic = async () => {
+  const toggleMic = () => {
     if (isProcessing) return;
-    if (micActive) {
+    if (isListening) {
       stopListening();
-      stopAnalysis();
-      setMicActive(false);
-      setRmsVolume(0);
     } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-          },
-        });
-        await startAnalysis(stream);
-        startListening();
-        setMicActive(true);
-      } catch { 
-        setGlobalError('Hardware microphone configuration failed. Verify system permissions.');
-      }
+      startListening();
     }
   };
 
@@ -123,26 +99,18 @@ export default function InterviewRoomPage() {
 
   // Automatically mute/deactivate mic when processing begins
   useEffect(() => {
-    if (isProcessing) {
-      if (micActive) {
-        stopListening();
-        stopAnalysis();
-        setTimeout(() => {
-          setMicActive(false);
-          setRmsVolume(0);
-        }, 0);
-      }
+    if (isProcessing && isListening) {
+      stopListening();
     }
-  }, [isProcessing, micActive, stopListening, stopAnalysis]);
+  }, [isProcessing, isListening, stopListening]);
 
   // Safe unmount context cleanup lifecycle ring
   useEffect(() => {
     return () => {
       stopListening();
-      stopAnalysis();
       resetStore();
     };
-  }, [stopListening, stopAnalysis, resetStore]);
+  }, [stopListening, resetStore]);
 
   // Session Close Navigation Monitor
   useEffect(() => {
@@ -150,12 +118,6 @@ export default function InterviewRoomPage() {
       router.push(`/feedback/${sessionId}`);
     }
   }, [sessionClosed, sessionId, router]);
-
-  // Memoized performance styles for animated visual loops
-  const scaleStyle = useMemo(() => ({
-    transform: `scale(${1 + rmsVolume * 2.0})`,
-    opacity: Math.max(0.05, 0.4 - rmsVolume),
-  }), [rmsVolume]);
 
   if (loading || !token) {
     return (
@@ -166,7 +128,7 @@ export default function InterviewRoomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans select-none">
+    <div className="h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans select-none overflow-hidden">
       {/* Top Application Header */}
       <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-4">
@@ -182,10 +144,10 @@ export default function InterviewRoomPage() {
       </header>
 
       {/* Main Execution Framework Layout Box */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden max-w-6xl w-full mx-auto px-6 py-8 gap-6 h-[calc(100vh-140px)]">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden max-w-7xl w-full mx-auto px-6 py-8 gap-6 min-h-0">
         
         {/* Left Column: Live Transcript stream */}
-        <main className="flex-1 flex flex-col rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden h-full">
+        <main className="flex-1 flex flex-col rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden h-full min-h-0">
           {/* Complies with accessible standards using role configuration and polite notification profiles */}
           <div className="flex-1 p-6 overflow-y-auto space-y-6" role="log" aria-live="polite">
             {transcript.length === 0 && (
@@ -251,12 +213,14 @@ export default function InterviewRoomPage() {
           {/* Text Mode Input Area */}
           <div className="p-4 border-t border-zinc-800 flex gap-3 items-end">
             <textarea
+              ref={textareaRef}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={isProcessing ? "Processing response..." : "Type your answer here..."}
               disabled={isProcessing}
-              rows={2}
+              rows={3}
+              style={{ minHeight: '60px', maxHeight: '200px' }}
               className="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-base text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
@@ -269,19 +233,19 @@ export default function InterviewRoomPage() {
           </div>
         </main>
 
-        {/* Right Column: Hardware Audio Telemetry Context Console */}
-        <aside className="w-full md:w-80 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-center justify-between gap-8 h-full md:h-auto">
+        {/* Right Column: Audio Controls Panel */}
+        <aside className="w-full md:w-80 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-center justify-between gap-8 h-auto md:h-full">
           <div className="w-full text-center">
             <h2 className="font-extrabold text-zinc-100 text-2xl mb-1.5">Audio Controls</h2>
             <p className="text-base text-zinc-300">Toggle your microphone connection to process answers.</p>
           </div>
 
-          {/* Pulsing Visual Wave Mapper Nodes */}
+          {/* Mic Button with Pulse Ring */}
           <div className="relative w-44 h-44 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center overflow-hidden">
-            {micActive && (
+            {isListening && (
               <div
-                style={scaleStyle}
-                className="absolute w-36 h-36 border-2 border-indigo-500/30 rounded-full transition-transform duration-75 ease-out"
+                className="absolute w-36 h-36 border-2 border-indigo-500/30 rounded-full animate-ping"
+                style={{ animationDuration: '2s' }}
                 aria-hidden="true"
               />
             )}
@@ -289,32 +253,32 @@ export default function InterviewRoomPage() {
             <button
               onClick={toggleMic}
               disabled={isProcessing}
-              aria-label={micActive ? 'Deactivate microphone input stream' : 'Activate microphone input stream'}
+              aria-label={isListening ? 'Deactivate microphone input stream' : 'Activate microphone input stream'}
               className={`w-28 h-28 rounded-full flex items-center justify-center relative z-10 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                micActive
+                isListening
                   ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20'
                   : 'bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20'
               }`}
             >
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={micActive ? "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" : "M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"} />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isListening ? "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" : "M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"} />
               </svg>
             </button>
           </div>
 
           <div className="w-full text-center">
-            <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest block">TELEMETRY MONITOR STATUS</span>
+            <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest block">MICROPHONE STATUS</span>
             <div className="mt-2 text-base font-semibold" role="status">
               {isProcessing ? (
                 <span className="text-indigo-400 flex items-center justify-center gap-1.5 text-base font-bold">
                   <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse" aria-hidden="true" /> Processing Response...
                 </span>
-              ) : micActive ? (
+              ) : isListening ? (
                 <span className="text-emerald-400 flex items-center justify-center gap-1.5 text-base font-bold">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" aria-hidden="true" /> Audio Stream Online
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" aria-hidden="true" /> Listening...
                 </span>
               ) : (
-                <span className="text-zinc-400 text-base">Audio Stream Offline</span>
+                <span className="text-zinc-400 text-base">Microphone Off</span>
               )}
             </div>
           </div>
