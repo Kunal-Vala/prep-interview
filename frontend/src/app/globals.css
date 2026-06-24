@@ -128,3 +128,32 @@
     @apply font-sans;
   }
 }
+
+/* Custom Scrollbars styling for a premium dark mode look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: oklch(0.268 0.011 36.5); /* zinc-800 equivalent */
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: oklch(0.367 0.016 35.7); /* zinc-700 equivalent */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.268 0.011 36.5) transparent;
+}
