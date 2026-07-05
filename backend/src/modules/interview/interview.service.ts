@@ -25,6 +25,7 @@ export class InterviewService {
         targetRole: dto.targetRole,
         difficulty: dto.difficulty,
         mode: dto.mode,
+        questionCount: dto.questionCount ?? 7,
         status: SessionStatus.IN_PROGRESS,
         feedbackReport: {
           create: {
