@@ -414,7 +414,13 @@ export class InterviewGateway
       include: {
         questions: {
           orderBy: { sequenceNumber: 'asc' },
-          select: { questionText: true, userAnswer: true, category: true },
+          select: {
+            id: true,
+            questionText: true,
+            userAnswer: true,
+            category: true,
+            parentQuestionId: true,
+          },
         },
       },
     });
@@ -422,13 +428,34 @@ export class InterviewGateway
     if (!session) return;
 
     // 2. Build conversation history for LLM
+    const majorQuestions = session.questions.filter(
+      (q) => q.parentQuestionId === null,
+    );
+    const isWrapUp = majorQuestions.length >= session.questionCount;
+
+    const systemPromptContent = isWrapUp
+      ? `You are an expert technical interviewer conducting a mock interview for a "${session.targetRole}" position. The interview is complete as the candidate has answered all questions. Do not ask any more questions. Thank the candidate for their time, provide a brief wrap-up, and say goodbye. Keep it to 2-3 sentences. Do not break character. Optional: you can start your response with "[FOLLOW_UP]".`
+      : `You are an expert technical interviewer conducting a mock interview for a "${session.targetRole}" position at difficulty level ${session.difficulty}/5.
+Ask one question at a time. Be concise (2-3 sentences max). Do not break character.
+
+You MUST start every response you generate with one of these two exact tags (no formatting, just the text at the very beginning of the response):
+- "[NEW_TOPIC]" if you are starting a completely new major interview question on a different topic.
+- "[FOLLOW_UP]" if you are repeating the question, clarifying it, or asking a counter-question/follow-up on the current topic.
+
+Guidelines for managing the conversation:
+1. Cover a balanced mix of different question categories (Technical, System Design, Coding, Behavioral, Situational).
+2. If the candidate's response is a greeting, is off-topic, is extremely brief (e.g. "I don't know", "hello"), or fails to address the question properly, use "[FOLLOW_UP]" to politely prompt them again, repeat, or clarify the question.
+3. If the candidate gives a partial or high-level answer, use "[FOLLOW_UP]" to ask a relevant counter-question to explore their reasoning deeper.
+4. You can ask up to 2 follow-ups/counter-questions (i.e. up to 2 "[FOLLOW_UP]" queries) per major topic.
+5. Once a topic has been sufficiently explored (or after 2 follow-ups), transition to a completely new major topic and start your response with "[NEW_TOPIC]".`;
+
     const messages: {
       role: 'system' | 'user' | 'assistant';
       content: string;
     }[] = [
       {
         role: 'system',
-        content: `You are an expert technical interviewer conducting a mock interview for a "${session.targetRole}" position at difficulty level ${session.difficulty}/5. Ask one question at a time. Be concise (2-3 sentences max). Mix behavioral and technical questions. After the candidate answers, briefly acknowledge their response and ask the next question. Do not break character.`,
+        content: systemPromptContent,
       },
     ];
 
@@ -449,20 +476,95 @@ export class InterviewGateway
     const nextSeq = (session.questions.length || 0) + 1;
     const streamId = `stream-${sessionId}-${nextSeq}`;
 
-    // 4. Stream AI response
+    // 4. Stream AI response and intercept tags
+    let tagParsed = false;
+    let tag: 'NEW_TOPIC' | 'FOLLOW_UP' = 'NEW_TOPIC';
+    let bufferedText = '';
+
     const fullText = await this.aiService.streamInterviewerResponse(
       messages,
       (token: string) => {
-        client.emit('ai-response-stream', {
-          sessionId,
-          delta: token,
-          streamId,
-        });
+        if (!tagParsed) {
+          bufferedText += token;
+          if (bufferedText.includes(']')) {
+            const closingIdx = bufferedText.indexOf(']');
+            const possibleTag = bufferedText.substring(0, closingIdx + 1);
+            if (possibleTag.includes('FOLLOW_UP')) {
+              tag = 'FOLLOW_UP';
+            } else {
+              tag = 'NEW_TOPIC';
+            }
+            tagParsed = true;
+            const rest = bufferedText.substring(closingIdx + 1).trimStart();
+            if (rest) {
+              client.emit('ai-response-stream', {
+                sessionId,
+                delta: rest,
+                streamId,
+              });
+            }
+          } else if (bufferedText.length > 20) {
+            tagParsed = true;
+            client.emit('ai-response-stream', {
+              sessionId,
+              delta: bufferedText,
+              streamId,
+            });
+          }
+        } else {
+          client.emit('ai-response-stream', {
+            sessionId,
+            delta: token,
+            streamId,
+          });
+        }
       },
     );
 
+    if (!tagParsed) {
+      if (fullText.includes('[FOLLOW_UP]')) {
+        tag = 'FOLLOW_UP';
+      } else {
+        tag = 'NEW_TOPIC';
+      }
+    }
+
+    const cleanedText = fullText
+      .replace('[FOLLOW_UP]', '')
+      .replace('[NEW_TOPIC]', '')
+      .trim();
+
+    if (isWrapUp) {
+      client.emit('ai-response-end', {
+        sessionId,
+        streamId,
+        fullText: cleanedText,
+        role: 'closing' as const,
+      });
+
+      client.emit('next-question', {
+        sessionId,
+        sequenceNumber: nextSeq,
+        category: QuestionCategory.SITUATIONAL,
+        questionText: cleanedText,
+        isWrapUp: true,
+      });
+      return;
+    }
+
     // 5. Determine question category based on content
-    const category = this.inferCategory(fullText);
+    const category = this.inferCategory(cleanedText);
+
+    // Get parentQuestionId if follow-up
+    let parentQuestionId: string | null = null;
+    if (tag === 'FOLLOW_UP') {
+      const lastMajor = session.questions
+        .filter((q) => q.parentQuestionId === null)
+        .pop();
+      if (lastMajor) {
+        parentQuestionId = lastMajor.id;
+      }
+    }
 
     // 6. Save the new question to DB
     let newQuestion;
@@ -472,7 +574,8 @@ export class InterviewGateway
           sessionId,
           sequenceNumber: nextSeq,
           category,
-          questionText: fullText,
+          questionText: cleanedText,
+          parentQuestionId,
           askedAt: new Date(),
         },
       });
@@ -499,7 +602,7 @@ export class InterviewGateway
     client.emit('ai-response-end', {
       sessionId,
       streamId,
-      fullText,
+      fullText: cleanedText,
       role: 'next-question' as const,
     });
 
@@ -509,7 +612,7 @@ export class InterviewGateway
       questionId: newQuestion.id,
       sequenceNumber: nextSeq,
       category,
-      questionText: fullText,
+      questionText: cleanedText,
     });
   }
 
@@ -529,7 +632,9 @@ export class InterviewGateway
     }[] = [
       {
         role: 'system',
-        content: `You are an expert technical interviewer conducting a mock interview for a "${targetRole}" position at difficulty level ${difficulty}/5. Start the interview with a warm but professional greeting (1 sentence) and then ask your first interview question. Be concise — 2-3 sentences total. Do not break character.`,
+        content: `You are an expert technical interviewer conducting a mock interview for a "${targetRole}" position at difficulty level ${difficulty}/5.
+Start your response with the tag "[NEW_TOPIC]".
+Start the interview with a warm but professional greeting (1 sentence) and then ask your first interview question. Be concise — 2-3 sentences total. Do not break character.`,
       },
       {
         role: 'user',
@@ -539,16 +644,47 @@ export class InterviewGateway
 
     const streamId = `stream-${sessionId}-${sequenceNumber}`;
 
+    let tagParsed = false;
+    let bufferedText = '';
+
     const fullText = await this.aiService.streamInterviewerResponse(
       messages,
       (token: string) => {
-        client.emit('ai-response-stream', {
-          sessionId,
-          delta: token,
-          streamId,
-        });
+        if (!tagParsed) {
+          bufferedText += token;
+          if (bufferedText.includes(']')) {
+            tagParsed = true;
+            const closingIdx = bufferedText.indexOf(']');
+            const rest = bufferedText.substring(closingIdx + 1).trimStart();
+            if (rest) {
+              client.emit('ai-response-stream', {
+                sessionId,
+                delta: rest,
+                streamId,
+              });
+            }
+          } else if (bufferedText.length > 20) {
+            tagParsed = true;
+            client.emit('ai-response-stream', {
+              sessionId,
+              delta: bufferedText,
+              streamId,
+            });
+          }
+        } else {
+          client.emit('ai-response-stream', {
+            sessionId,
+            delta: token,
+            streamId,
+          });
+        }
       },
     );
+
+    const cleanedText = fullText
+      .replace('[FOLLOW_UP]', '')
+      .replace('[NEW_TOPIC]', '')
+      .trim();
 
     // Save question to DB
     let question;
@@ -558,7 +694,7 @@ export class InterviewGateway
           sessionId,
           sequenceNumber,
           category: QuestionCategory.BEHAVIORAL,
-          questionText: fullText,
+          questionText: cleanedText,
           askedAt: new Date(),
         },
       });
@@ -584,7 +720,7 @@ export class InterviewGateway
     client.emit('ai-response-end', {
       sessionId,
       streamId,
-      fullText,
+      fullText: cleanedText,
       role: 'next-question' as const,
     });
 
@@ -593,7 +729,7 @@ export class InterviewGateway
       questionId: question.id,
       sequenceNumber,
       category: QuestionCategory.BEHAVIORAL,
-      questionText: fullText,
+      questionText: cleanedText,
     });
   }
 
