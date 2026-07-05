@@ -165,4 +165,22 @@ export class InterviewService {
       questions: session.questions,
     };
   }
+
+  async deleteSession(sessionId: string, userId: string): Promise<void> {
+    const session = await this.prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (session.userId !== userId) {
+      throw new ForbiddenException('Unauthorized access');
+    }
+
+    await this.prisma.interviewSession.delete({
+      where: { id: sessionId },
+    });
+  }
 }
