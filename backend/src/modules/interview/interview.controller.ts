@@ -2,6 +2,8 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
+  HttpCode,
   Body,
   Param,
   UseGuards,
@@ -38,5 +40,11 @@ export class InterviewController {
   @Get('sessions/:id/feedback')
   getFeedback(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.interviewService.getSessionFeedback(id, req.user.sub);
+  }
+
+  @Delete('sessions/:id')
+  @HttpCode(204)
+  deleteSession(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.interviewService.deleteSession(id, req.user.sub);
   }
 }
