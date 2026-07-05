@@ -51,10 +51,11 @@ export interface TTSChunkPayload {
 }
 export interface NextQuestionPayload {
   sessionId: string;
-  questionId: string;
+  questionId?: string;
   sequenceNumber: number;
   category: string;
   questionText: string;
+  isWrapUp?: boolean;
 }
 export interface SessionClosedPayload {
   sessionId: string;
