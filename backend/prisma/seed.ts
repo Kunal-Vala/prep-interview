@@ -5,7 +5,7 @@ import {
   SessionStatus,
   QuestionCategory,
   FeedbackStatus,
-} from '../generated/prisma/client';
+} from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import 'dotenv/config';
 
