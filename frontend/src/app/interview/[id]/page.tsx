@@ -24,7 +24,10 @@ export default function InterviewRoomPage() {
   const isProcessing = useInterviewStore((state) => state.isProcessing);
   const setProcessing = useInterviewStore((state) => state.setProcessing);
 
+  const isWrapUp = currentQuestion?.isWrapUp || false;
+
   const [textInput, setTextInput] = useState('');
+  const [showRetry, setShowRetry] = useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   // Auto-expand textarea height dynamically matching text content
@@ -55,15 +58,10 @@ export default function InterviewRoomPage() {
     }, []),
     onEnd: useCallback((finalText: string) => {
       console.log('[SpeechRecognition] Final text captured:', finalText);
-      if (finalText.trim() && currentQuestion?.questionId) {
-        const store = useInterviewStore.getState();
-        if (!store.isProcessing) {
-          store.setProcessing(true);
-          sendTextMessage(finalText.trim());
-          setTextInput('');
-        }
+      if (finalText.trim()) {
+        setTextInput(finalText.trim());
       }
-    }, [currentQuestion, sendTextMessage]),
+    }, []),
     onError: useCallback((event: SpeechRecognitionErrorEvent) => {
       console.error('[SpeechRecognition] Error event:', event);
       if (event.error === 'not-allowed') {
@@ -79,12 +77,14 @@ export default function InterviewRoomPage() {
     if (isListening) {
       stopListening();
     } else {
+      setShowRetry(false);
       startListening();
     }
   };
 
   const handleSendText = () => {
     if (!textInput.trim() || isProcessing) return;
+    setShowRetry(false);
     setProcessing(true);
     sendTextMessage(textInput.trim());
     setTextInput('');
@@ -96,6 +96,33 @@ export default function InterviewRoomPage() {
       handleSendText();
     }
   };
+
+  const handleRetry = useCallback(() => {
+    const lastCandidateMsg = [...transcript].reverse().find((m) => m.role === 'candidate');
+    if (!lastCandidateMsg) return;
+
+    setGlobalError(null);
+    setShowRetry(false);
+    setProcessing(true);
+    sendTextMessage(lastCandidateMsg.content, true);
+  }, [transcript, sendTextMessage, setGlobalError, setProcessing]);
+
+  // Watchdog watchdog timer to catch stuck LLM response requests
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    if (isProcessing && !streamingText) {
+      timer = setTimeout(() => {
+        setGlobalError("The interviewer is taking longer than expected to respond. Please retry.");
+        setShowRetry(true);
+        setProcessing(false);
+      }, 20000);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isProcessing, streamingText, setGlobalError, setProcessing]);
 
   // Automatically mute/deactivate mic when processing begins
   useEffect(() => {
@@ -137,9 +164,13 @@ export default function InterviewRoomPage() {
         </div>
         <button
           onClick={() => endSession()}
-          className="px-5 py-2.5 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-900/40 text-base font-bold text-red-400 transition-colors cursor-pointer animate-fade-in"
+          className={`px-5 py-2.5 rounded-lg border text-base font-bold transition-all cursor-pointer animate-fade-in ${
+            isWrapUp
+              ? 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white animate-pulse shadow-lg shadow-indigo-600/30'
+              : 'bg-red-950/40 hover:bg-red-900/50 border-red-900/40 text-red-400'
+          }`}
         >
-          Wrap Session
+          {isWrapUp ? 'Finish & View Feedback' : 'Wrap Session'}
         </button>
       </header>
 
@@ -204,9 +235,19 @@ export default function InterviewRoomPage() {
 
           {/* Localized Error Banner Overlay */}
           {globalError && (
-            <div role="alert" className="p-4 bg-red-950/30 border-t border-red-900/40 text-sm text-red-400 flex items-center justify-between">
-              <span>{globalError}</span>
-              <button onClick={() => setGlobalError(null)} className="text-zinc-400 hover:text-zinc-200 font-bold font-mono cursor-pointer">Dismiss</button>
+            <div role="alert" className="p-4 bg-red-950/30 border-t border-red-900/40 text-sm text-red-400 flex items-center justify-between gap-4">
+              <span className="flex-1">{globalError}</span>
+              <div className="flex items-center gap-3">
+                {showRetry && (
+                  <button
+                    onClick={handleRetry}
+                    className="px-3.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition-colors cursor-pointer select-none"
+                  >
+                    Retry
+                  </button>
+                )}
+                <button onClick={() => setGlobalError(null)} className="text-zinc-400 hover:text-zinc-200 font-bold font-mono cursor-pointer">Dismiss</button>
+              </div>
             </div>
           )}
 
@@ -217,15 +258,21 @@ export default function InterviewRoomPage() {
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={isProcessing ? "Processing response..." : "Type your answer here..."}
-              disabled={isProcessing}
+              placeholder={
+                isWrapUp
+                  ? "Interview complete. Please click 'Finish & View Feedback' above to view your report."
+                  : isProcessing
+                  ? "Processing response..."
+                  : "Type your answer here..."
+              }
+              disabled={isProcessing || isWrapUp}
               rows={3}
               style={{ minHeight: '60px', maxHeight: '200px' }}
               className="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-base text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               onClick={handleSendText}
-              disabled={!textInput.trim() || isProcessing}
+              disabled={!textInput.trim() || isProcessing || isWrapUp}
               className="px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-base font-bold text-white disabled:bg-zinc-800 disabled:text-zinc-600 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               Send
@@ -252,7 +299,7 @@ export default function InterviewRoomPage() {
             
             <button
               onClick={toggleMic}
-              disabled={isProcessing}
+              disabled={isProcessing || isWrapUp}
               aria-label={isListening ? 'Deactivate microphone input stream' : 'Activate microphone input stream'}
               className={`w-28 h-28 rounded-full flex items-center justify-center relative z-10 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 isListening
@@ -269,7 +316,9 @@ export default function InterviewRoomPage() {
           <div className="w-full text-center">
             <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest block">MICROPHONE STATUS</span>
             <div className="mt-2 text-base font-semibold" role="status">
-              {isProcessing ? (
+              {isWrapUp ? (
+                <span className="text-indigo-400 font-bold">Interview Complete</span>
+              ) : isProcessing ? (
                 <span className="text-indigo-400 flex items-center justify-center gap-1.5 text-base font-bold">
                   <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse" aria-hidden="true" /> Processing Response...
                 </span>
