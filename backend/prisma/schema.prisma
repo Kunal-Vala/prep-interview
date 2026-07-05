@@ -4,8 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -160,6 +159,10 @@ model InterviewQuestion {
   askedAt         DateTime          @default(now())
   answeredAt      DateTime?
   answerDuration  Int?                               // Seconds taken to answer
+
+  parentQuestionId String?
+  parentQuestion   InterviewQuestion?  @relation("QuestionFollowUps", fields: [parentQuestionId], references: [id], onDelete: Cascade)
+  followUps        InterviewQuestion[] @relation("QuestionFollowUps")
 
   session  InterviewSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
