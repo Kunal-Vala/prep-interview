@@ -734,7 +734,7 @@ export default function FeedbackReportPage() {
                             <p className="text-base text-zinc-550 dark:text-zinc-400 mb-6">Your mock interview is being graded by our AI assessor. This usually takes 5-15 seconds. Please refresh the page shortly.</p>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="px-6 py-3 rounded-lg bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-bold text-white focus:outline-none mr-3 cursor-pointer"
+                                className="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-bold text-white focus:outline-none mr-3 cursor-pointer"
                             >
                                 Refresh Page
                             </button>
@@ -812,7 +812,7 @@ export default function FeedbackReportPage() {
                         )}
                     </div>
                     
-                    <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-bold text-white transition-colors focus:outline-none">
+                    <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-bold text-white transition-colors focus:outline-none">
                         Go to Dashboard
                     </Link>
                 </div>
@@ -905,7 +905,7 @@ export default function FeedbackReportPage() {
                                     </div>
                                     <p className="text-base text-zinc-600 dark:text-zinc-300 leading-relaxed">{imp.detail}</p>
                                     <div className="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-200 dark:border-zinc-850 text-sm leading-relaxed">
-                                        <strong className="text-indigo-650 dark:text-indigo-400 block mb-1 tracking-wide font-bold">Actionable Advice</strong>
+                                        <strong className="text-indigo-600 dark:text-indigo-400 block mb-1 tracking-wide font-bold">Actionable Advice</strong>
                                         <span className="text-zinc-700 dark:text-zinc-300">{imp.actionableAdvice}</span>
                                     </div>
                                 </div>
@@ -942,7 +942,7 @@ export default function FeedbackReportPage() {
                                             className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-100/50 dark:hover:bg-zinc-900/40 transition-colors focus:outline-none"
                                         >
                                             <div className="flex flex-wrap items-center gap-3">
-                                                <span className="text-base font-mono font-bold text-indigo-650 dark:text-indigo-400">Q{q.sequenceNumber}</span>
+                                                <span className="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400">Q{q.sequenceNumber}</span>
                                                 <span className="text-base font-bold text-zinc-850 dark:text-zinc-200">{fb?.questionSummary || q.category}</span>
                                                 <span className="px-2.5 py-0.5 rounded text-xs font-bold uppercase border tracking-wider bg-zinc-150 border-zinc-250 text-zinc-600 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400">
                                                     {q.category}
