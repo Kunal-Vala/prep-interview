@@ -12,4 +12,9 @@ export class CreateSessionDto {
   @IsString()
   @IsIn(['TEXT', 'VOICE', 'VIDEO_SIM'])
   mode!: 'TEXT' | 'VOICE' | 'VIDEO_SIM';
+
+  @IsInt()
+  @Min(3)
+  @Max(15)
+  questionCount?: number;
 }
