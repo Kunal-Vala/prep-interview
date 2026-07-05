@@ -26,6 +26,8 @@ interface Question {
     askedAt: string;
     answeredAt?: string | null;
     answerDuration?: number | null;
+    parentQuestionId?: string | null;
+    followUps?: Question[];
 }
 
 interface QuestionFeedbackItem {
@@ -144,6 +146,24 @@ export default function FeedbackReportPage() {
         return map;
     }, [report]);
 
+    const groupedQuestions = useMemo(() => {
+        if (!report?.questions) return [];
+        // Filter out questions that have parentQuestionId set (meaning they are follow-ups)
+        const majors = report.questions.filter((q) => !q.parentQuestionId);
+        
+        // Nest their follow-ups (only answered ones)
+        return majors.map((mq, index) => {
+            const followUps = report.questions!.filter(
+                (q) => q.parentQuestionId === mq.id && q.userAnswer !== null
+            );
+            return {
+                ...mq,
+                sequenceNumber: index + 1,
+                followUps,
+            };
+        });
+    }, [report]);
+
     if (loading || (!report && !error)) {
         return (
             <div className="min-h-screen bg-zinc-950 flex items-center justify-center" role="status" aria-live="polite">
@@ -195,8 +215,7 @@ export default function FeedbackReportPage() {
         );
     }
 
-    const recommendationText = (report.hiringRecommendation || 'PENDING').replace('_', ' ');
-    const isRecommended = recommendationText.toLowerCase().includes('yes');
+
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-20 select-none">
@@ -233,13 +252,6 @@ export default function FeedbackReportPage() {
                         <span className="absolute text-4xl font-extrabold text-white font-mono">{radialMetrics.scoreNum.toFixed(1)}</span>
                     </div>
 
-                    <div className="mt-8">
-                        <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest block mb-2.5">Recommendation</span>
-                        <span className={`text-lg font-extrabold uppercase tracking-wide px-4.5 py-2.5 rounded-lg border ${isRecommended ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
-                            }`}>
-                            {recommendationText}
-                        </span>
-                    </div>
                 </section>
 
                 {/* Dimension Breakdown Card Section */}
@@ -324,8 +336,8 @@ export default function FeedbackReportPage() {
                     </div>
 
                     <div className="space-y-4">
-                        {report.questions && report.questions.length > 0 ? (
-                            report.questions.map((q) => {
+                        {groupedQuestions.length > 0 ? (
+                            groupedQuestions.map((q) => {
                                 const fb = questionFeedbackMap.get(q.sequenceNumber);
                                 const isExpanded = expandedQuestionSeq === q.sequenceNumber;
                                 
@@ -397,6 +409,29 @@ export default function FeedbackReportPage() {
                                                         {q.userAnswer || 'No response provided.'}
                                                     </div>
                                                 </div>
+
+                                                {/* Follow-up exchanges (if any) */}
+                                                {q.followUps && q.followUps.length > 0 && (
+                                                    <div className="space-y-4 pt-4 border-t border-zinc-850/60 animate-fade-in">
+                                                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2.5">Follow-up Dialogue</h4>
+                                                        {q.followUps.map((f) => (
+                                                            <div key={f.id} className="space-y-3.5 pl-4 border-l-2 border-zinc-800 mb-4 last:mb-0">
+                                                                <div className="space-y-1.5">
+                                                                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Interviewer Follow-up</span>
+                                                                    <div className="text-sm text-zinc-300 leading-relaxed bg-zinc-900/60 p-3.5 rounded-lg border border-zinc-850">
+                                                                        {f.questionText}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-1.5">
+                                                                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Your Response</span>
+                                                                    <div className="text-sm text-zinc-200 leading-relaxed bg-zinc-900/20 p-3.5 rounded-lg border border-zinc-850 italic">
+                                                                        {f.userAnswer || 'No response provided.'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
 
                                                 {/* AI Assessment & Criticism */}
                                                 {fb && (
