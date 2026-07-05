@@ -114,6 +114,8 @@ export function useSpeechRecognition({
   // Failure tracking
   const failCountRef = useRef(0);
 
+  const launchSessionRef = useRef<() => void>(() => {});
+
   const langRef = useRef(lang);
   useEffect(() => { langRef.current = lang; }, [lang]);
 
@@ -262,7 +264,7 @@ export function useSpeechRecognition({
       restartTimerRef.current = setTimeout(() => {
         restartTimerRef.current = null;
         if (!wantStopRef.current) {
-          launchSession();
+          launchSessionRef.current();
         }
       }, delay);
     };
@@ -279,11 +281,15 @@ export function useSpeechRecognition({
         const delay = Math.min(200 * failCountRef.current, 1000);
         restartTimerRef.current = setTimeout(() => {
           restartTimerRef.current = null;
-          if (!wantStopRef.current) launchSession();
+          if (!wantStopRef.current) launchSessionRef.current();
         }, delay);
       }
     }
   }, [clearAllTimers, resetWatchdog]);
+
+  useEffect(() => {
+    launchSessionRef.current = launchSession;
+  }, [launchSession]);
 
   // ── Public API ────────────────────────────────────────────────────────
 
