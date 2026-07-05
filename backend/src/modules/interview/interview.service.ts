@@ -157,6 +157,8 @@ export class InterviewService {
 
     return {
       ...report,
+      targetRole: session.targetRole,
+      difficulty: session.difficulty,
       hiringRecommendation,
       hiringRationale,
       studyRecommendations,
