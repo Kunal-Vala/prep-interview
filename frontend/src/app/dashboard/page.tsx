@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [targetRole, setTargetRole] = useState('Node.js Backend Engineer');
   const [difficulty, setDifficulty] = useState<number>(3);
   const [mode, setMode] = useState<'TEXT' | 'VOICE'>('VOICE');
+  const [questionCount, setQuestionCount] = useState<number>(7);
 
   // Route Authentication Protection Guard
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function DashboardPage() {
           targetRole: targetRole.trim(),
           difficulty,
           mode,
+          questionCount,
         });
         
         setShowModal(false);
@@ -225,6 +227,21 @@ export default function DashboardPage() {
                     value={difficulty} onChange={(e) => setDifficulty(parseInt(e.target.value, 10) || 3)}
                     className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   />
+                </div>
+                <div>
+                  <label htmlFor="question-count-input" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Number of Questions</label>
+                  <select
+                    id="question-count-input"
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(parseInt(e.target.value, 10) || 7)}
+                    className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-base text-zinc-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    {[3, 5, 7, 10, 12, 15].map((num) => (
+                      <option key={num} value={num} className="bg-zinc-900 text-zinc-100">
+                        {num} Questions
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <span className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Communication Mode</span>
