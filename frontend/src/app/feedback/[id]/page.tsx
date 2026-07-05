@@ -56,6 +56,8 @@ interface FeedbackReport {
     hiringRationale: string;
     studyRecommendations: string[];
     questions?: Question[];
+    targetRole?: string;
+    difficulty?: number;
 }
 
 export default function FeedbackReportPage() {
@@ -66,6 +68,7 @@ export default function FeedbackReportPage() {
     const [report, setReport] = useState<FeedbackReport | null>(null);
     const [error, setError] = useState(false);
     const [expandedQuestionSeq, setExpandedQuestionSeq] = useState<number | null>(1);
+    const [exportOpen, setExportOpen] = useState(false);
 
     // Auth Enforcer Guard
     useEffect(() => {
@@ -164,80 +167,533 @@ export default function FeedbackReportPage() {
         });
     }, [report]);
 
-    const handleDownloadReport = useCallback(() => {
-        if (!report) return;
+    const generateStyledHTML = useCallback(() => {
+        if (!report) return '';
 
-        let markdownContent = `# Mock Interview Feedback Report\n\n`;
-        markdownContent += `**Overall Score**: ${parseFloat(report.overallScore || '0').toFixed(1)}/10.0\n`;
-        markdownContent += `**Technical Score**: ${parseFloat(report.technicalScore || '0').toFixed(1)}/10.0\n`;
-        markdownContent += `**Communication Score**: ${parseFloat(report.communicationScore || '0').toFixed(1)}/10.0\n`;
-        markdownContent += `**Pacing Score**: ${parseFloat(report.pacingScore || '0').toFixed(1)}/10.0\n`;
-        if (report.codeQualityScore) {
-            markdownContent += `**Code Design Quality Score**: ${parseFloat(report.codeQualityScore).toFixed(1)}/10.0\n`;
-        }
-        if (report.behavioralScore) {
-            markdownContent += `**Behavioral Quality Score**: ${parseFloat(report.behavioralScore).toFixed(1)}/10.0\n`;
-        }
-        markdownContent += `\n---\n\n`;
-
-        markdownContent += `## Key Strengths\n`;
-        if (report.strengths && report.strengths.length > 0) {
-            report.strengths.forEach((s) => {
-                markdownContent += `- ${s}\n`;
-            });
-        } else {
-            markdownContent += `No major strengths noted.\n`;
-        }
-        markdownContent += `\n`;
-
-        markdownContent += `## Areas to Improve\n`;
+        let improvementsHtml = '';
         if (report.improvements && report.improvements.length > 0) {
             report.improvements.forEach((imp) => {
-                markdownContent += `### 🔴 ${imp.area} [${imp.severity.toUpperCase()} SEVERITY]\n`;
-                markdownContent += `**Feedback**: ${imp.detail}\n\n`;
-                markdownContent += `**Actionable Advice**: ${imp.actionableAdvice}\n\n`;
-                markdownContent += `**Example from session**: *"${imp.exampleFromSession}"*\n\n`;
+                improvementsHtml += `
+                <div class="improve-item">
+                    <div class="improve-title">
+                        🔴 ${imp.area}
+                        <span class="badge ${imp.severity.toLowerCase()}">${imp.severity}</span>
+                    </div>
+                    <div class="improve-detail">${imp.detail}</div>
+                    <div class="improve-advice"><strong>Actionable advice:</strong> ${imp.actionableAdvice}</div>
+                </div>`;
             });
         } else {
-            markdownContent += `No major improvements requested.\n`;
+            improvementsHtml = '<p>No major areas to improve identified.</p>';
         }
-        markdownContent += `\n---\n\n`;
 
-        markdownContent += `## Detailed Q&A Log & AI Criticism\n\n`;
+        let strengthsHtml = '';
+        if (report.strengths && report.strengths.length > 0) {
+            report.strengths.forEach((s) => {
+                strengthsHtml += `<li>${s}</li>`;
+            });
+        } else {
+            strengthsHtml = '<li>No major strengths noted.</li>';
+        }
+
+        let qnaHtml = '';
         groupedQuestions.forEach((q) => {
             const fb = questionFeedbackMap.get(q.sequenceNumber);
-            markdownContent += `### Q${q.sequenceNumber}: ${fb?.questionSummary || q.category} [${q.category.toUpperCase()}]\n`;
-            markdownContent += `**Question**: ${q.questionText}\n\n`;
-            markdownContent += `**Your Response**: *"${q.userAnswer || 'No response.'}"*\n\n`;
-            
+            let followupsHtml = '';
             if (q.followUps && q.followUps.length > 0) {
-                markdownContent += `**Follow-up Dialogue**:\n`;
+                followupsHtml += '<div class="followups">';
                 q.followUps.forEach((f) => {
-                    markdownContent += `- *Interviewer Follow-up*: ${f.questionText}\n`;
-                    markdownContent += `- *Your Response*: *"${f.userAnswer || 'No response.'}"*\n`;
+                    followupsHtml += `
+                    <div class="followup-turn">
+                        <div class="followup-q"><strong>Follow-up Q:</strong> ${f.questionText}</div>
+                        <div class="followup-a"><strong>Your response:</strong> "${f.userAnswer || 'No response.'}"</div>
+                    </div>`;
                 });
-                markdownContent += `\n`;
+                followupsHtml += '</div>';
             }
 
+            let assessmentHtml = '';
             if (fb) {
-                markdownContent += `**AI Score**: ${fb.score.toFixed(1)}/10.0\n\n`;
-                markdownContent += `**Assessment**: ${fb.comment}\n\n`;
-                markdownContent += `**How to Improve**: ${fb.suggestionsForImprovement || 'N/A'}\n\n`;
-                markdownContent += `**Ideal Outline**:\n${fb.idealResponseOutline || 'N/A'}\n\n`;
+                assessmentHtml += `
+                <div class="ai-comment-card">
+                    <div class="ai-comment-header">AI Score: ${fb.score.toFixed(1)}/10.0 | ${fb.answerQuality.toUpperCase()}</div>
+                    <p style="margin: 4px 0 10px;">${fb.comment}</p>
+                    <p style="margin: 0 0 10px;"><strong>How to Improve:</strong> ${fb.suggestionsForImprovement || 'N/A'}</p>
+                    <p style="margin: 0;"><strong>Model Response Outline:</strong><br>${(fb.idealResponseOutline || '').replace(/\n/g, '<br>')}</p>
+                </div>`;
             }
-            markdownContent += `---\n\n`;
+
+            qnaHtml += `
+            <div class="dialogue-box">
+                <div class="dialogue-q">
+                    <span class="q-num">Q${q.sequenceNumber}</span>
+                    <span class="q-cat">${q.category}</span>
+                </div>
+                <div class="q-text"><strong>Question:</strong> ${q.questionText}</div>
+                <div class="ans-box"><strong>Your response:</strong> "${q.userAnswer || 'No response.'}"</div>
+                ${followupsHtml}
+                ${assessmentHtml}
+            </div>`;
         });
 
-        // Trigger file download in browser
-        const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `interview_report_${sessionId}.md`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }, [report, groupedQuestions, questionFeedbackMap, sessionId]);
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mock Interview Feedback Report - ${report.targetRole}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #1e1b4b;
+        }
+        .meta {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        .meta span {
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #f5f3ff;
+            border: 4px solid #818cf8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+        .score-val {
+            font-size: 32px;
+            font-weight: 800;
+            color: #4f46e5;
+            line-height: 1;
+        }
+        .score-lbl {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6366f1;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+        }
+        .dim-row {
+            margin-bottom: 16px;
+        }
+        .dim-row:last-child {
+            margin-bottom: 0;
+        }
+        .dim-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+        .dim-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .dim-bar-fill {
+            height: 100%;
+            background: #4f46e5;
+            border-radius: 4px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #1e293b;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 8px;
+        }
+        .strength-list {
+            padding-left: 20px;
+            margin: 0;
+        }
+        .strength-list li {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #334155;
+        }
+        .improve-item {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .improve-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .improve-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.05em;
+        }
+        .badge.high { background: #fee2e2; color: #991b1b; }
+        .badge.medium { background: #fef3c7; color: #92400e; }
+        .badge.low { background: #f1f5f9; color: #475569; }
+        .improve-detail {
+            font-size: 14px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+        .improve-advice {
+            font-size: 13px;
+            background: #f8fafc;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border-left: 3px solid #cbd5e1;
+            color: #334155;
+            margin-top: 4px;
+        }
+        .dialogue-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            background: #ffffff;
+            page-break-inside: avoid;
+        }
+        .dialogue-q {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e1b4b;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .q-num {
+            font-size: 13px;
+            font-weight: 800;
+            color: #6366f1;
+            background: #e0e7ff;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .q-cat {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .q-text {
+            font-size: 14px;
+            color: #1e293b;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        .ans-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            font-style: italic;
+            font-size: 13px;
+            color: #334155;
+            margin-bottom: 12px;
+        }
+        .followups {
+            border-left: 2px solid #cbd5e1;
+            padding-left: 15px;
+            margin-bottom: 12px;
+            margin-top: 12px;
+        }
+        .followup-turn {
+            margin-bottom: 10px;
+            padding-left: 5px;
+        }
+        .followup-turn:last-child {
+            margin-bottom: 0;
+        }
+        .followup-q {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 2px;
+        }
+        .followup-a {
+            font-size: 12px;
+            font-style: italic;
+            color: #475569;
+        }
+        .ai-comment-card {
+            background: #f5f3ff;
+            border: 1px solid #e0e7ff;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 13px;
+            color: #334155;
+            margin-top: 15px;
+        }
+        .ai-comment-header {
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 11px;
+            color: #6366f1;
+        }
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                border: none;
+                max-width: 100%;
+            }
+            .dialogue-box {
+                page-break-inside: avoid;
+            }
+        }
+        @media (max-width: 640px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 15px 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mock Interview Feedback Report</h1>
+        <div class="meta">
+            <span>Role: ${report.targetRole}</span>
+            <span>Difficulty: ${report.difficulty}/5</span>
+        </div>
+
+        <div class="grid">
+            <div class="card" style="text-align: center;">
+                <div class="score-circle">
+                    <span class="score-val">${parseFloat(report.overallScore || '0').toFixed(1)}</span>
+                    <span class="score-lbl">Overall</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="dim-row">
+                    <div class="dim-header">
+                        <span>Technical Accuracy</span>
+                        <span>${parseFloat(report.technicalScore || '0').toFixed(1)}/10.0</span>
+                    </div>
+                    <div class="dim-bar-bg">
+                        <div class="dim-bar-fill" style="width: ${parseFloat(report.technicalScore || '0') * 10}%;"></div>
+                    </div>
+                </div>
+                <div class="dim-row">
+                    <div class="dim-header">
+                        <span>Communication Clarity</span>
+                        <span>${parseFloat(report.communicationScore || '0').toFixed(1)}/10.0</span>
+                    </div>
+                    <div class="dim-bar-bg">
+                        <div class="dim-bar-fill" style="width: ${parseFloat(report.communicationScore || '0') * 10}%;"></div>
+                    </div>
+                </div>
+                <div class="dim-row">
+                    <div class="dim-header">
+                        <span>Answer Pacing</span>
+                        <span>${parseFloat(report.pacingScore || '0').toFixed(1)}/10.0</span>
+                    </div>
+                    <div class="dim-bar-bg">
+                        <div class="dim-bar-fill" style="width: ${parseFloat(report.pacingScore || '0') * 10}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="section-title">Key Strengths</div>
+            <ul class="strength-list">
+                ${strengthsHtml}
+            </ul>
+        </div>
+
+        <div class="card" style="margin-bottom: 40px;">
+            <div class="section-title">Areas to Improve</div>
+            ${improvementsHtml}
+        </div>
+
+        <div class="section-title" style="font-size: 20px; margin-bottom: 25px;">Detailed Dialogue Transcript & AI Criticism</div>
+        ${qnaHtml}
+    </div>
+</body>
+</html>`;
+    }, [report, groupedQuestions, questionFeedbackMap]);
+
+    const handleDownload = useCallback((format: 'pdf' | 'html' | 'md') => {
+        if (!report) return;
+
+        if (format === 'md') {
+            let markdownContent = `# Mock Interview Feedback Report\n\n`;
+            markdownContent += `**Overall Score**: ${parseFloat(report.overallScore || '0').toFixed(1)}/10.0\n`;
+            markdownContent += `**Technical Score**: ${parseFloat(report.technicalScore || '0').toFixed(1)}/10.0\n`;
+            markdownContent += `**Communication Score**: ${parseFloat(report.communicationScore || '0').toFixed(1)}/10.0\n`;
+            markdownContent += `**Pacing Score**: ${parseFloat(report.pacingScore || '0').toFixed(1)}/10.0\n`;
+            if (report.codeQualityScore) {
+                markdownContent += `**Code Design Quality Score**: ${parseFloat(report.codeQualityScore).toFixed(1)}/10.0\n`;
+            }
+            if (report.behavioralScore) {
+                markdownContent += `**Behavioral Quality Score**: ${parseFloat(report.behavioralScore).toFixed(1)}/10.0\n`;
+            }
+            markdownContent += `\n---\n\n`;
+
+            markdownContent += `## Key Strengths\n`;
+            if (report.strengths && report.strengths.length > 0) {
+                report.strengths.forEach((s) => {
+                    markdownContent += `- ${s}\n`;
+                });
+            } else {
+                markdownContent += `No major strengths noted.\n`;
+            }
+            markdownContent += `\n`;
+
+            markdownContent += `## Areas to Improve\n`;
+            if (report.improvements && report.improvements.length > 0) {
+                report.improvements.forEach((imp) => {
+                    markdownContent += `### 🔴 ${imp.area} [${imp.severity.toUpperCase()} SEVERITY]\n`;
+                    markdownContent += `**Feedback**: ${imp.detail}\n\n`;
+                    markdownContent += `**Actionable Advice**: ${imp.actionableAdvice}\n\n`;
+                    markdownContent += `**Example from session**: *"${imp.exampleFromSession}"*\n\n`;
+                });
+            } else {
+                markdownContent += `No major improvements requested.\n`;
+            }
+            markdownContent += `\n---\n\n`;
+
+            markdownContent += `## Detailed Q&A Log & AI Criticism\n\n`;
+            groupedQuestions.forEach((q) => {
+                const fb = questionFeedbackMap.get(q.sequenceNumber);
+                markdownContent += `### Q${q.sequenceNumber}: ${fb?.questionSummary || q.category} [${q.category.toUpperCase()}]\n`;
+                markdownContent += `**Question**: ${q.questionText}\n\n`;
+                markdownContent += `**Your Response**: *"${q.userAnswer || 'No response.'}"*\n\n`;
+                
+                if (q.followUps && q.followUps.length > 0) {
+                    markdownContent += `**Follow-up Dialogue**:\n`;
+                    q.followUps.forEach((f) => {
+                        markdownContent += `- *Interviewer Follow-up*: ${f.questionText}\n`;
+                        markdownContent += `- *Your Response*: *"${f.userAnswer || 'No response.'}"*\n`;
+                    });
+                    markdownContent += `\n`;
+                }
+
+                if (fb) {
+                    markdownContent += `**AI Score**: ${fb.score.toFixed(1)}/10.0\n\n`;
+                    markdownContent += `**Assessment**: ${fb.comment}\n\n`;
+                    markdownContent += `**How to Improve**: ${fb.suggestionsForImprovement || 'N/A'}\n\n`;
+                    markdownContent += `**Ideal Outline**:\n${fb.idealResponseOutline || 'N/A'}\n\n`;
+                }
+                markdownContent += `---\n\n`;
+            });
+
+            const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `interview_report_${sessionId}.md`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            const html = generateStyledHTML();
+            if (format === 'html') {
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `interview_report_${sessionId}.html`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else if (format === 'pdf') {
+                const printWindow = window.open('', '_blank');
+                if (!printWindow) {
+                    alert('Please allow popups to generate the PDF report.');
+                    return;
+                }
+                printWindow.document.write(html);
+                printWindow.document.close();
+                
+                printWindow.onload = () => {
+                    printWindow.print();
+                };
+                setTimeout(() => {
+                    if (printWindow.document.readyState === 'complete') {
+                        printWindow.print();
+                    }
+                }, 1000);
+            }
+        }
+    }, [report, groupedQuestions, questionFeedbackMap, sessionId, generateStyledHTML]);
 
     if (loading || (!report && !error)) {
         return (
@@ -302,13 +758,42 @@ export default function FeedbackReportPage() {
                     <span className="text-base text-zinc-850" aria-hidden="true">|</span>
                     <h1 className="text-base font-extrabold text-zinc-200 font-mono tracking-wider">ASSESSMENT LEDGER ANALYTICS</h1>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleDownloadReport}
-                        className="px-5 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm font-bold text-zinc-300 transition-colors focus:outline-none cursor-pointer"
-                    >
-                        Download Report
-                    </button>
+                <div className="flex items-center gap-3 relative">
+                    <div className="relative">
+                        <button
+                            onClick={() => setExportOpen(!exportOpen)}
+                            className="px-5 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm font-bold text-zinc-300 transition-colors focus:outline-none cursor-pointer flex items-center gap-2 select-none"
+                        >
+                            Export Report
+                            <svg className={`w-4 h-4 text-zinc-400 transform transition-transform duration-200 ${exportOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        
+                        {exportOpen && (
+                            <div className="absolute right-0 mt-2 w-48 rounded-lg bg-zinc-900 border border-zinc-800 shadow-xl z-50 overflow-hidden py-1.5">
+                                <button
+                                    onClick={() => { handleDownload('pdf'); setExportOpen(false); }}
+                                    className="w-full px-4 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
+                                >
+                                    📄 PDF Document
+                                </button>
+                                <button
+                                    onClick={() => { handleDownload('html'); setExportOpen(false); }}
+                                    className="w-full px-4 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
+                                >
+                                    🌐 HTML Webpage
+                                </button>
+                                <button
+                                    onClick={() => { handleDownload('md'); setExportOpen(false); }}
+                                    className="w-full px-4 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
+                                >
+                                    ✍️ Markdown File
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
                     <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white transition-colors focus:outline-none">
                         Go to Dashboard
                     </Link>
