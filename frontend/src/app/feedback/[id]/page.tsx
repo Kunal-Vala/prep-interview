@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ImprovementItem {
     area: string;
@@ -64,6 +65,7 @@ export default function FeedbackReportPage() {
     const { id: sessionId } = useParams() as { id: string };
     const { token, loading } = useAuth();
     const router = useRouter();
+    const { theme, toggleTheme } = useTheme();
 
     const [report, setReport] = useState<FeedbackReport | null>(null);
     const [error, setError] = useState(false);
@@ -697,19 +699,19 @@ export default function FeedbackReportPage() {
 
     if (loading || (!report && !error)) {
         return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center" role="status" aria-live="polite">
-                <span className="text-zinc-400 animate-pulse text-base font-bold tracking-wider">COMPILING EVALUATIONS METRICS...</span>
+            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center" role="status" aria-live="polite">
+                <span className="text-zinc-550 dark:text-zinc-400 animate-pulse text-base font-bold tracking-wider">COMPILING EVALUATIONS METRICS...</span>
             </div>
         );
     }
 
     if (error || !report) {
         return (
-            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-4">
                 <main className="max-w-md text-center" role="alert">
                     <h2 className="text-2xl font-bold text-red-500 mb-2">Failed to Load Report</h2>
-                    <p className="text-base text-zinc-400 mb-6">The evaluation job is either still processing or failed during server-side compilation compilation updates.</p>
-                    <Link href="/dashboard" className="px-6 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-sm font-bold text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-700">
+                    <p className="text-base text-zinc-500 dark:text-zinc-400 mb-6">The evaluation job is either still processing or failed during server-side compilation updates.</p>
+                    <Link href="/dashboard" className="px-6 py-3 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-sm font-bold text-zinc-700 dark:text-zinc-300 focus:outline-none">
                         Return to Dashboard
                     </Link>
                 </main>
@@ -719,26 +721,26 @@ export default function FeedbackReportPage() {
 
     if (report.status !== 'COMPLETED') {
         return (
-            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-4">
                 <main className="max-w-md text-center" role="alert">
                     {report.status === 'FAILED' ? (
                         <>
                             <h2 className="text-2xl font-bold text-red-500 mb-2">Grading Failed</h2>
-                            <p className="text-base text-zinc-400 mb-6">Something went wrong while grading your mock interview session. Please try again or contact support.</p>
+                            <p className="text-base text-zinc-550 dark:text-zinc-400 mb-6">Something went wrong while grading your mock interview session. Please try again or contact support.</p>
                         </>
                     ) : (
                         <>
-                            <h2 className="text-2xl font-bold text-indigo-400 mb-2 animate-pulse">Grading In Progress</h2>
-                            <p className="text-base text-zinc-400 mb-6">Your mock interview is being graded by our AI assessor. This usually takes 5-15 seconds. Please refresh the page shortly.</p>
+                            <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-2 animate-pulse">Grading In Progress</h2>
+                            <p className="text-base text-zinc-550 dark:text-zinc-400 mb-6">Your mock interview is being graded by our AI assessor. This usually takes 5-15 seconds. Please refresh the page shortly.</p>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="px-6 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white focus:outline-none mr-3 cursor-pointer"
+                                className="px-6 py-3 rounded-lg bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-bold text-white focus:outline-none mr-3 cursor-pointer"
                             >
                                 Refresh Page
                             </button>
                         </>
                     )}
-                    <Link href="/dashboard" className="px-6 py-3 rounded-lg bg-zinc-900 border border-zinc-800 text-sm font-bold text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-700">
+                    <Link href="/dashboard" className="px-6 py-3 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-sm font-bold text-zinc-700 dark:text-zinc-300 focus:outline-none">
                         Return to Dashboard
                     </Link>
                 </main>
@@ -749,44 +751,60 @@ export default function FeedbackReportPage() {
 
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-20 select-none">
-            <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans pb-20 select-none transition-colors duration-200">
+            <header className="border-b border-zinc-200 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between sticky top-0 z-40">
                 <div className="flex items-center gap-3">
-                    <Link href="/dashboard" className="text-base font-bold text-zinc-400 hover:text-zinc-200 focus:outline-none">
+                    <Link href="/dashboard" className="text-base font-bold text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 focus:outline-none">
                         &larr; Back
                     </Link>
-                    <span className="text-base text-zinc-850" aria-hidden="true">|</span>
-                    <h1 className="text-base font-extrabold text-zinc-200 font-mono tracking-wider">ASSESSMENT LEDGER ANALYTICS</h1>
+                    <span className="text-base text-zinc-300 dark:text-zinc-800" aria-hidden="true">|</span>
+                    <h1 className="text-base font-extrabold text-zinc-800 dark:text-zinc-200 font-mono tracking-wider">ASSESSMENT LEDGER ANALYTICS</h1>
                 </div>
                 <div className="flex items-center gap-3 relative">
+                    <button
+                        onClick={toggleTheme}
+                        className="p-2.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-850 text-zinc-650 dark:text-zinc-350 transition-colors cursor-pointer"
+                        aria-label="Toggle Theme Mode"
+                    >
+                        {theme === 'dark' ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                            </svg>
+                        ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        )}
+                    </button>
+                    
                     <div className="relative">
                         <button
                             onClick={() => setExportOpen(!exportOpen)}
-                            className="px-5 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm font-bold text-zinc-300 transition-colors focus:outline-none cursor-pointer flex items-center gap-2 select-none"
+                            className="px-5 py-2.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-sm font-bold text-zinc-700 dark:text-zinc-300 transition-colors focus:outline-none cursor-pointer flex items-center gap-2 select-none"
                         >
                             Export Report
-                            <svg className={`w-4 h-4 text-zinc-400 transform transition-transform duration-200 ${exportOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className={`w-4 h-4 text-zinc-550 dark:text-zinc-400 transform transition-transform duration-200 ${exportOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         
                         {exportOpen && (
-                            <div className="absolute right-0 mt-2 w-48 rounded-lg bg-zinc-900 border border-zinc-800 shadow-xl z-50 overflow-hidden py-1.5">
+                            <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl z-50 overflow-hidden py-1.5">
                                 <button
                                     onClick={() => { handleDownload('pdf'); setExportOpen(false); }}
-                                    className="w-full px-4 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
+                                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
                                 >
                                     📄 PDF Document
                                 </button>
                                 <button
                                     onClick={() => { handleDownload('html'); setExportOpen(false); }}
-                                    className="w-full px-4 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
+                                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
                                 >
                                     🌐 HTML Webpage
                                 </button>
                                 <button
                                     onClick={() => { handleDownload('md'); setExportOpen(false); }}
-                                    className="w-full px-4 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
+                                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer select-none font-medium flex items-center gap-2"
                                 >
                                     ✍️ Markdown File
                                 </button>
@@ -794,7 +812,7 @@ export default function FeedbackReportPage() {
                         )}
                     </div>
                     
-                    <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white transition-colors focus:outline-none">
+                    <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-bold text-white transition-colors focus:outline-none">
                         Go to Dashboard
                     </Link>
                 </div>
@@ -802,12 +820,12 @@ export default function FeedbackReportPage() {
 
             <main className="max-w-5xl w-full mx-auto px-6 mt-12 grid gap-8 md:grid-cols-3">
                 {/* Radial Rating Card Section */}
-                <section className="md:col-span-1 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-center justify-center text-center shadow-sm">
-                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-6">Overall Rating</h2>
+                <section className="md:col-span-1 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col items-center justify-center text-center shadow-sm">
+                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-400 mb-6">Overall Rating</h2>
 
                     <div className="relative w-36 h-36 flex items-center justify-center animate-fade-in" aria-label={`Overall score is ${radialMetrics.scoreNum.toFixed(1)} out of 10`}>
                         <svg className="w-full h-full transform -rotate-90" aria-hidden="true">
-                            <circle cx="72" cy="72" r="64" stroke="rgba(39, 39, 42, 0.4)" strokeWidth="8" fill="transparent" />
+                            <circle cx="72" cy="72" r="64" stroke="currentColor" className="text-zinc-100 dark:text-zinc-800" strokeWidth="8" fill="transparent" />
                             <circle
                                 cx="72" cy="72" r="64"
                                 stroke="#4f46e5" strokeWidth="8" fill="transparent"
@@ -817,24 +835,24 @@ export default function FeedbackReportPage() {
                                 className="transition-all duration-500 ease-out"
                             />
                         </svg>
-                        <span className="absolute text-4xl font-extrabold text-white font-mono">{radialMetrics.scoreNum.toFixed(1)}</span>
+                        <span className="absolute text-4xl font-extrabold text-zinc-900 dark:text-white font-mono">{radialMetrics.scoreNum.toFixed(1)}</span>
                     </div>
 
                 </section>
 
                 {/* Dimension Breakdown Card Section */}
-                <section className="md:col-span-2 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col justify-center gap-5 shadow-sm">
-                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-2">Score Dimension Breakdown</h2>
+                <section className="md:col-span-2 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col justify-center gap-5 shadow-sm">
+                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-400 mb-2">Score Dimension Breakdown</h2>
 
                     {scoreDimensions.map((bar) => {
                         const numericValue = parseFloat(bar.score || '0') || 0;
                         return (
                             <div key={bar.id} className="space-y-1.5">
                                 <div className="flex justify-between text-base font-semibold">
-                                    <span className="text-zinc-200">{bar.label}</span>
-                                    <span className="text-indigo-400 font-mono font-bold">{numericValue.toFixed(1)}/10.0</span>
+                                    <span className="text-zinc-700 dark:text-zinc-200">{bar.label}</span>
+                                    <span className="text-indigo-600 dark:text-indigo-400 font-mono font-bold">{numericValue.toFixed(1)}/10.0</span>
                                 </div>
-                                <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden" aria-hidden="true">
+                                <div className="w-full h-2 bg-zinc-100 dark:bg-zinc-950 rounded-full overflow-hidden" aria-hidden="true">
                                     <div
                                         style={{ width: `${Math.min(Math.max(numericValue, 0), 10) * 10}%` }}
                                         className="h-full bg-indigo-600 rounded-full transition-all duration-500 ease-out"
@@ -846,21 +864,21 @@ export default function FeedbackReportPage() {
                 </section>
 
                 {/* Hiring Rationale Section */}
-                <section className="md:col-span-3 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">
-                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-3">Executive Rationale</h2>
-                    <p className="text-base leading-relaxed text-zinc-300 whitespace-pre-line">{report.hiringRationale}</p>
+                <section className="md:col-span-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-400 mb-3">Executive Rationale</h2>
+                    <p className="text-base leading-relaxed text-zinc-650 dark:text-zinc-300 whitespace-pre-line">{report.hiringRationale}</p>
                 </section>
 
                 {/* Core Strengths and Opportunities Matrix */}
                 <div className="md:col-span-3 grid gap-6 md:grid-cols-2">
                     {/* Strengths Board */}
-                    <section className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">
-                        <h2 className="text-base font-bold uppercase tracking-wider text-emerald-400 mb-4 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400" aria-hidden="true" /> STRENGTHS ARCHIVE
+                    <section className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+                        <h2 className="text-base font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-4 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" aria-hidden="true" /> STRENGTHS ARCHIVE
                         </h2>
                         <ul className="space-y-3">
                             {report.strengths.map((str, index) => (
-                                <li key={`str-${index}`} className="text-base text-zinc-200 flex items-start gap-2.5 leading-relaxed">
+                                <li key={`str-${index}`} className="text-base text-zinc-700 dark:text-zinc-200 flex items-start gap-2.5 leading-relaxed">
                                     <span className="text-emerald-500 font-bold select-none" aria-hidden="true">&bull;</span>
                                     <span>{str}</span>
                                 </li>
@@ -869,26 +887,26 @@ export default function FeedbackReportPage() {
                     </section>
 
                     {/* Opportunities Board */}
-                    <section className="rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">
-                        <h2 className="text-base font-bold uppercase tracking-wider text-amber-400 mb-4 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-amber-400" aria-hidden="true" /> REQUIRED OPPORTUNITY DELTAS
+                    <section className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+                        <h2 className="text-base font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-4 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" aria-hidden="true" /> REQUIRED OPPORTUNITY DELTAS
                         </h2>
                         <div className="space-y-5">
                             {report.improvements.map((imp, index) => (
-                                <div key={`imp-${index}`} className="space-y-1.5 border-b border-zinc-850 pb-4 last:border-b-0 last:pb-0">
+                                <div key={`imp-${index}`} className="space-y-1.5 border-b border-zinc-100 dark:border-zinc-850 pb-4 last:border-b-0 last:pb-0">
                                     <div className="flex items-center gap-2 justify-between">
-                                        <span className="text-base font-extrabold text-zinc-100">{imp.area}</span>
-                                        <span className={`px-2.5 py-1 rounded text-xs font-extrabold uppercase border tracking-wider ${imp.severity === 'high' ? 'bg-red-500/10 border-red-500/25 text-red-400' :
-                                                imp.severity === 'medium' ? 'bg-amber-500/10 border-amber-500/25 text-amber-400' :
-                                                    'bg-zinc-800 border-zinc-700 text-zinc-400'
+                                        <span className="text-base font-extrabold text-zinc-800 dark:text-zinc-100">{imp.area}</span>
+                                        <span className={`px-2.5 py-1 rounded text-xs font-extrabold uppercase border tracking-wider ${imp.severity === 'high' ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/25 text-red-700 dark:text-red-400' :
+                                                imp.severity === 'medium' ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25 text-amber-700 dark:text-amber-400' :
+                                                    'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
                                             }`}>
                                             {imp.severity} severity
                                         </span>
                                     </div>
-                                    <p className="text-base text-zinc-300 leading-relaxed">{imp.detail}</p>
-                                    <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-850 text-sm leading-relaxed">
-                                        <strong className="text-indigo-400 block mb-1 tracking-wide font-bold">Actionable Advice</strong>
-                                        <span className="text-zinc-300">{imp.actionableAdvice}</span>
+                                    <p className="text-base text-zinc-600 dark:text-zinc-300 leading-relaxed">{imp.detail}</p>
+                                    <div className="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-200 dark:border-zinc-850 text-sm leading-relaxed">
+                                        <strong className="text-indigo-650 dark:text-indigo-400 block mb-1 tracking-wide font-bold">Actionable Advice</strong>
+                                        <span className="text-zinc-700 dark:text-zinc-300">{imp.actionableAdvice}</span>
                                     </div>
                                 </div>
                             ))}
@@ -897,10 +915,10 @@ export default function FeedbackReportPage() {
                 </div>
 
                 {/* Detailed Question & Response Log Section */}
-                <section className="md:col-span-3 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm space-y-6">
+                <section className="md:col-span-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm space-y-6">
                     <div>
-                        <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-1">Detailed Question & Response Log</h2>
-                        <p className="text-base text-zinc-300">Review your answers question-by-question alongside detailed AI criticism and suggestions for improvement.</p>
+                        <h2 className="text-base font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-400 mb-1">Detailed Question & Response Log</h2>
+                        <p className="text-base text-zinc-550 dark:text-zinc-300">Review your answers question-by-question alongside detailed AI criticism and suggestions for improvement.</p>
                     </div>
 
                     <div className="space-y-4">
@@ -911,22 +929,22 @@ export default function FeedbackReportPage() {
                                 
                                 // Color badges for answer quality
                                 const qualityColor = fb?.answerQuality === 'strong'
-                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-250 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
                                     : fb?.answerQuality === 'weak'
-                                        ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                                        : 'bg-amber-500/10 border-amber-500/20 text-amber-400';
+                                        ? 'bg-red-50 dark:bg-red-500/10 border-red-250 dark:border-red-500/20 text-red-700 dark:text-red-400'
+                                        : 'bg-amber-50 dark:bg-amber-500/10 border-amber-250 dark:border-amber-500/20 text-amber-700 dark:text-amber-400';
 
                                 return (
-                                    <div key={q.id} className="border border-zinc-800 bg-zinc-950/40 rounded-xl overflow-hidden transition-all duration-300">
+                                    <div key={q.id} className="border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 rounded-xl overflow-hidden transition-all duration-300">
                                         {/* Accordion Header */}
                                         <button
                                             onClick={() => setExpandedQuestionSeq(isExpanded ? null : q.sequenceNumber)}
-                                            className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-900/40 transition-colors focus:outline-none"
+                                            className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-100/50 dark:hover:bg-zinc-900/40 transition-colors focus:outline-none"
                                         >
                                             <div className="flex flex-wrap items-center gap-3">
-                                                <span className="text-base font-mono font-bold text-indigo-400">Q{q.sequenceNumber}</span>
-                                                <span className="text-base font-bold text-zinc-200">{fb?.questionSummary || q.category}</span>
-                                                <span className="px-2.5 py-0.5 rounded text-xs font-bold uppercase border tracking-wider bg-zinc-800 border-zinc-700 text-zinc-400">
+                                                <span className="text-base font-mono font-bold text-indigo-650 dark:text-indigo-400">Q{q.sequenceNumber}</span>
+                                                <span className="text-base font-bold text-zinc-850 dark:text-zinc-200">{fb?.questionSummary || q.category}</span>
+                                                <span className="px-2.5 py-0.5 rounded text-xs font-bold uppercase border tracking-wider bg-zinc-150 border-zinc-250 text-zinc-600 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400">
                                                     {q.category}
                                                 </span>
                                             </div>
@@ -936,13 +954,13 @@ export default function FeedbackReportPage() {
                                                         <span className={`px-2.5 py-0.5 rounded text-xs font-extrabold uppercase border tracking-wider ${qualityColor}`}>
                                                             {fb.answerQuality}
                                                         </span>
-                                                        <span className="text-base font-mono font-extrabold text-zinc-300">
+                                                        <span className="text-base font-mono font-extrabold text-zinc-700 dark:text-zinc-300">
                                                             {(fb.score || 0).toFixed(1)}/10.0
                                                         </span>
                                                     </>
                                                 )}
                                                 <svg
-                                                    className={`w-4 h-4 text-zinc-500 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                                    className={`w-4 h-4 text-zinc-450 dark:text-zinc-500 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
                                                     fill="none"
                                                     stroke="currentColor"
                                                     viewBox="0 0 24 24"
@@ -954,11 +972,11 @@ export default function FeedbackReportPage() {
 
                                         {/* Accordion Content */}
                                         {isExpanded && (
-                                            <div className="px-5 pb-5 border-t border-zinc-850 bg-zinc-950/20 space-y-4 pt-4 animate-fade-in">
+                                            <div className="px-5 pb-5 border-t border-zinc-200 dark:border-zinc-850 bg-zinc-50/20 dark:bg-zinc-950/20 space-y-4 pt-4 animate-fade-in">
                                                 {/* The Question Asked */}
                                                 <div className="space-y-1.5">
-                                                    <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Question Asked</h3>
-                                                    <div className="text-base text-zinc-150 leading-relaxed bg-zinc-900/80 p-4 rounded-lg border border-zinc-850 font-medium">
+                                                    <h3 className="text-xs font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest">Question Asked</h3>
+                                                    <div className="text-base text-zinc-850 dark:text-zinc-150 leading-relaxed bg-zinc-100/50 dark:bg-zinc-900/80 p-4 rounded-lg border border-zinc-200 dark:border-zinc-850 font-medium">
                                                         {q.questionText}
                                                     </div>
                                                 </div>
@@ -966,33 +984,33 @@ export default function FeedbackReportPage() {
                                                 {/* Candidate Response */}
                                                 <div className="space-y-1.5">
                                                     <div className="flex justify-between items-center">
-                                                        <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Your Response</h3>
+                                                        <h3 className="text-xs font-bold text-zinc-455 dark:text-zinc-550 uppercase tracking-widest">Your Response</h3>
                                                         {q.answerDuration && (
                                                             <span className="text-xs font-mono text-zinc-500 font-semibold uppercase">
                                                                 Duration: {q.answerDuration}s
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="text-base text-zinc-200 leading-relaxed bg-zinc-900/40 p-4 rounded-lg border border-zinc-850 whitespace-pre-line italic">
+                                                    <div className="text-base text-zinc-750 dark:text-zinc-200 leading-relaxed bg-zinc-100/20 dark:bg-zinc-900/40 p-4 rounded-lg border border-zinc-200 dark:border-zinc-850 whitespace-pre-line italic">
                                                         {q.userAnswer || 'No response provided.'}
                                                     </div>
                                                 </div>
 
                                                 {/* Follow-up exchanges (if any) */}
                                                 {q.followUps && q.followUps.length > 0 && (
-                                                    <div className="space-y-4 pt-4 border-t border-zinc-850/60 animate-fade-in">
-                                                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2.5">Follow-up Dialogue</h4>
+                                                    <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-850/60 animate-fade-in">
+                                                        <h4 className="text-xs font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-2.5">Follow-up Dialogue</h4>
                                                         {q.followUps.map((f) => (
-                                                            <div key={f.id} className="space-y-3.5 pl-4 border-l-2 border-zinc-800 mb-4 last:mb-0">
+                                                            <div key={f.id} className="space-y-3.5 pl-4 border-l-2 border-zinc-200 dark:border-zinc-800 mb-4 last:mb-0">
                                                                 <div className="space-y-1.5">
-                                                                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Interviewer Follow-up</span>
-                                                                    <div className="text-sm text-zinc-300 leading-relaxed bg-zinc-900/60 p-3.5 rounded-lg border border-zinc-850">
+                                                                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Interviewer Follow-up</span>
+                                                                    <div className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed bg-zinc-100/40 dark:bg-zinc-900/60 p-3.5 rounded-lg border border-zinc-200 dark:border-zinc-850">
                                                                         {f.questionText}
                                                                     </div>
                                                                 </div>
                                                                 <div className="space-y-1.5">
-                                                                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Your Response</span>
-                                                                    <div className="text-sm text-zinc-200 leading-relaxed bg-zinc-900/20 p-3.5 rounded-lg border border-zinc-850 italic">
+                                                                    <span className="text-xs font-bold text-zinc-450 dark:text-zinc-400 uppercase tracking-widest">Your Response</span>
+                                                                    <div className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed bg-zinc-100/10 dark:bg-zinc-900/20 p-3.5 rounded-lg border border-zinc-200 dark:border-zinc-850 italic">
                                                                         {f.userAnswer || 'No response provided.'}
                                                                     </div>
                                                                 </div>
@@ -1003,24 +1021,24 @@ export default function FeedbackReportPage() {
 
                                                 {/* AI Assessment & Criticism */}
                                                 {fb && (
-                                                    <div className="space-y-4 pt-3 border-t border-zinc-850">
+                                                    <div className="space-y-4 pt-3 border-t border-zinc-200 dark:border-zinc-850">
                                                         <div className="space-y-1.5">
-                                                            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest">AI Assessment</h3>
-                                                            <p className="text-sm text-zinc-200 leading-relaxed">{fb.comment}</p>
+                                                            <h3 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">AI Assessment</h3>
+                                                            <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed">{fb.comment}</p>
                                                         </div>
 
                                                         {/* Suggestions for Improvement (Dynamic Fallback) */}
                                                         <div className="space-y-1.5">
-                                                            <h3 className="text-sm font-bold text-amber-400 uppercase tracking-widest">How to Improve</h3>
-                                                            <p className="text-sm text-zinc-300 leading-relaxed bg-amber-500/5 p-4 rounded-lg border border-amber-500/10">
+                                                            <h3 className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">How to Improve</h3>
+                                                            <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed bg-amber-500/5 p-4 rounded-lg border border-amber-500/10">
                                                                 {fb.suggestionsForImprovement || 'Structure your response clearly. Make sure to detail specific engineering constraints, tech details, and trade-offs rather than staying high-level.'}
                                                             </p>
                                                         </div>
 
                                                         {/* Model Response / Outline (Dynamic Fallback) */}
                                                         <div className="space-y-1.5">
-                                                            <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-widest">Model Outline</h3>
-                                                            <div className="text-sm text-zinc-300 leading-relaxed bg-emerald-500/5 p-4 rounded-lg border border-emerald-500/10 whitespace-pre-line">
+                                                            <h3 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Model Outline</h3>
+                                                            <div className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed bg-emerald-500/5 p-4 rounded-lg border border-emerald-500/10 whitespace-pre-line">
                                                                 {fb.idealResponseOutline || '1. Introduce the core concept directly and define key terms.\n2. Explain the architectural setup and how components interact.\n3. Mention engineering trade-offs (scalability, complexity, costs) to demonstrate senior-level maturity.'}
                                                             </div>
                                                         </div>
@@ -1032,7 +1050,7 @@ export default function FeedbackReportPage() {
                                 );
                             })
                         ) : (
-                            <div className="text-base text-zinc-500 text-center py-6 border border-dashed border-zinc-850 rounded-xl">
+                            <div className="text-base text-zinc-500 dark:text-zinc-450 text-center py-6 border border-dashed border-zinc-200 dark:border-zinc-850 rounded-xl">
                                 No questions were recorded in this session.
                             </div>
                         )}
@@ -1040,11 +1058,11 @@ export default function FeedbackReportPage() {
                 </section>
 
                 {/* Study Targets Chips Section */}
-                <section className="md:col-span-3 rounded-2xl bg-zinc-900 border border-zinc-800 p-6 shadow-sm">
-                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 mb-4">Recommended Curated Study Focus Clusters</h2>
+                <section className="md:col-span-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+                    <h2 className="text-base font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-400 mb-4">Recommended Curated Study Focus Clusters</h2>
                     <div className="flex flex-wrap gap-2.5">
                         {report.studyRecommendations.map((study, index) => (
-                            <span key={`study-${index}`} className="px-3.5 py-2 rounded-lg bg-zinc-950 border border-zinc-850 text-sm font-medium text-zinc-200 tracking-wide">
+                            <span key={`study-${index}`} className="px-3.5 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 text-sm font-medium text-zinc-800 dark:text-zinc-200 tracking-wide">
                                 {study}
                             </span>
                         ))}
