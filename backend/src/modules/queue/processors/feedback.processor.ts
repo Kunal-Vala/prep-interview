@@ -7,6 +7,7 @@ import { FeedbackStatus } from '@prisma/client';
 import {
   buildEvaluatorPrompt,
   parseEvaluatorResponse,
+  TranscriptMessage,
 } from '@/modules/ai/prompts/evaluator.prompt';
 import { FEEDBACK_QUEUE } from '../queue.constants';
 
@@ -55,24 +56,50 @@ export class FeedbackProcessor extends WorkerHost {
 
       // 3. build transcript array
 
-      const transcript = session.questions.flatMap((q) => [
-        {
-          role: 'interviewer' as const,
-          content: q.questionText,
-          questionCategory: q.category,
-          timestamp: q.askedAt.toISOString(),
-        },
-        ...(q.userAnswer
-          ? [
-              {
-                role: 'candidate' as const,
-                content: q.userAnswer,
-                timestamp:
-                  q.answeredAt?.toISOString() ?? q.askedAt.toISOString(),
-              },
-            ]
-          : []),
-      ]);
+      // Only include questions that have been answered by the candidate
+      const answeredQuestions = session.questions.filter(
+        (q) => q.userAnswer !== null,
+      );
+
+      const majors = answeredQuestions.filter((q) => !q.parentQuestionId);
+
+      const transcript: TranscriptMessage[] = majors.flatMap((mq) => {
+        const followUps = answeredQuestions.filter(
+          (q) => q.parentQuestionId === mq.id,
+        );
+
+        const turns: TranscriptMessage[] = [
+          {
+            role: 'interviewer' as const,
+            content: mq.questionText,
+            questionCategory: mq.category,
+            timestamp: mq.askedAt.toISOString(),
+          },
+          {
+            role: 'candidate' as const,
+            content: mq.userAnswer!,
+            timestamp: mq.answeredAt?.toISOString() ?? mq.askedAt.toISOString(),
+          },
+        ];
+
+        for (const f of followUps) {
+          turns.push(
+            {
+              role: 'interviewer' as const,
+              content: f.questionText,
+              questionCategory: 'FOLLOW_UP',
+              timestamp: f.askedAt.toISOString(),
+            },
+            {
+              role: 'candidate' as const,
+              content: f.userAnswer!,
+              timestamp: f.answeredAt?.toISOString() ?? f.askedAt.toISOString(),
+            },
+          );
+        }
+
+        return turns;
+      });
 
       // 4. Build evaluator prompt
       const prompt = buildEvaluatorPrompt({
