@@ -67,6 +67,16 @@ The interview ran for ${Math.round(input.sessionDurationSeconds / 60)} minutes.
 Analyze the FULL TRANSCRIPT below and produce a single, complete, valid JSON object — nothing else.
 No markdown fences. No prose before or after. Only the raw JSON.
 
+## Important Evaluation Constraints
+
+1. You MUST evaluate and score EVERY Major Question block. A Major Question starts with a category like TECHNICAL, BEHAVIORAL, SYSTEM_DESIGN, CODING, etc. Any subsequent turns in the transcript with the category "FOLLOW_UP" belong to that preceding Major Question and must be evaluated together as a single block.
+2. The "questionFeedback" array in your JSON output MUST contain exactly one entry for each Major Question block (grouping its corresponding FOLLOW_UP questions/answers together), in chronological order.
+3. For each Major Question block, ensure the "sequenceNumber" in the feedback item matches the chronological sequence number of that Major Question block (starting from 1). Do not output separate entries for FOLLOW_UP questions; evaluate them together with their parent Major Question.
+4. Do not omit or truncate any Major Question blocks from the "questionFeedback" array under any circumstances.
+5. The "category" field MUST be one of the following exact string values: "BEHAVIORAL", "TECHNICAL", "SYSTEM_DESIGN", "CODING", "SITUATIONAL", "CULTURE_FIT". Do not output "FOLLOW_UP" as a feedback category.
+6. The "answerQuality" field MUST be one of: "strong", "average", "weak".
+
+
 ## Scoring Rubric
 
 Score each dimension on a scale of **0.0 to 10.0** (one decimal place):
