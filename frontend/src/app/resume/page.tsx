@@ -222,7 +222,7 @@ export default function ResumeAnalyzerPage() {
                 <div className="flex items-center gap-8">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white" aria-hidden="true">AI</div>
-                        <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-800 to-zinc-550 dark:from-zinc-550 dark:to-zinc-400 bg-clip-text text-transparent">AI Everywhere</span>
+                        <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-800 to-zinc-550 dark:from-zinc-550 dark:to-zinc-400 bg-clip-text text-transparent">AI Interview</span>
                     </div>
                     <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
                         <Link href="/dashboard" className="text-zinc-500 dark:text-zinc-450 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Interviews</Link>

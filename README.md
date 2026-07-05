@@ -1,4 +1,4 @@
-# AI Everywhere: AI Mock Interviewer & Resume ATS Optimizer
+# AI Interview: AI Mock Interviewer & Resume ATS Optimizer
 
 An advanced, end-to-end web application that simulates real-world senior-level technical interviews and optimizes professional resumes for Applicant Tracking Systems (ATS).
 
