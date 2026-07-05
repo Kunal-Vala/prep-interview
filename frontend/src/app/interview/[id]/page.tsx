@@ -184,7 +184,7 @@ export default function InterviewRoomPage() {
             onClick={() => endSession()}
             className={`px-5 py-2.5 rounded-lg border text-sm sm:text-base font-bold transition-all cursor-pointer ${
               isWrapUp
-                ? 'bg-indigo-655 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 border-indigo-500 text-white animate-pulse shadow-lg shadow-indigo-600/30'
+                ? 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 border-indigo-500 text-white animate-pulse shadow-lg shadow-indigo-600/30'
                 : 'bg-red-50 hover:bg-red-100 border-red-200 text-red-600 dark:bg-red-950/40 dark:hover:bg-red-900/50 dark:border-red-900/40 dark:text-red-400'
             }`}
           >
@@ -217,8 +217,8 @@ export default function InterviewRoomPage() {
                 <div
                   className={`px-4 py-3 rounded-2xl text-base leading-relaxed border ${
                     msg.role === 'candidate'
-                      ? 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 text-zinc-900 dark:text-zinc-50'
-                      : 'bg-indigo-50/50 dark:bg-indigo-650/10 border-indigo-100 dark:border-indigo-500/20 text-indigo-950 dark:text-indigo-100'
+                      ? 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 text-zinc-900 dark:text-zinc-555'
+                      : 'bg-indigo-50/50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20 text-indigo-950 dark:text-indigo-100'
                   }`}
                 >
                   {msg.content}
@@ -231,7 +231,7 @@ export default function InterviewRoomPage() {
                 <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
                   Interviewer Synthesizing Response...
                 </span>
-                <div className="px-4 py-3 rounded-2xl text-base leading-relaxed border bg-indigo-50/50 dark:bg-indigo-650/10 border-indigo-100 dark:border-indigo-500/20 text-indigo-950 dark:text-indigo-100">
+                <div className="px-4 py-3 rounded-2xl text-base leading-relaxed border bg-indigo-50/50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20 text-indigo-950 dark:text-indigo-100">
                   {streamingText}
                   <span className="inline-block w-1.5 h-3.5 bg-indigo-500 animate-pulse ml-0.5 align-middle" aria-hidden="true" />
                 </div>
@@ -240,7 +240,7 @@ export default function InterviewRoomPage() {
 
             {isProcessing && !streamingText && (
               <div className="flex flex-col max-w-[80%] items-start mr-auto">
-                <span className="text-xs font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
+                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1.5 animate-pulse">
                   Interviewer is transcribing & thinking...
                 </span>
                 <div className="px-4 py-3 rounded-2xl text-base leading-relaxed border bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-850 text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
@@ -260,7 +260,7 @@ export default function InterviewRoomPage() {
                 {showRetry && (
                   <button
                     onClick={handleRetry}
-                    className="px-3.5 py-1.5 rounded bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-xs font-bold text-white transition-colors cursor-pointer select-none"
+                    className="px-3.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-xs font-bold text-white transition-colors cursor-pointer select-none"
                   >
                     Retry
                   </button>
@@ -292,7 +292,7 @@ export default function InterviewRoomPage() {
             <button
               onClick={handleSendText}
               disabled={!textInput.trim() || isProcessing || isWrapUp}
-              className="px-6 py-4 rounded-xl bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-base font-bold text-white disabled:bg-zinc-200 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-650 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              className="px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-base font-bold text-white disabled:bg-zinc-200 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-650 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               Send
             </button>
@@ -322,8 +322,8 @@ export default function InterviewRoomPage() {
               aria-label={isListening ? 'Deactivate microphone input stream' : 'Activate microphone input stream'}
               className={`w-28 h-28 rounded-full flex items-center justify-center relative z-10 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 isListening
-                  ? 'bg-red-655 hover:bg-red-600 shadow-lg shadow-red-500/20'
-                  : 'bg-indigo-655 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 shadow-lg shadow-indigo-650/20 dark:shadow-indigo-600/20'
+                  ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20'
+                  : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 dark:shadow-indigo-600/20'
               }`}
             >
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -338,7 +338,7 @@ export default function InterviewRoomPage() {
               {isWrapUp ? (
                 <span className="text-indigo-600 dark:text-indigo-400 font-bold">Interview Complete</span>
               ) : isProcessing ? (
-                <span className="text-indigo-650 dark:text-indigo-400 flex items-center justify-center gap-1.5 text-base font-bold">
+                <span className="text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1.5 text-base font-bold">
                   <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 dark:bg-indigo-400 animate-pulse" aria-hidden="true" /> Processing Response...
                 </span>
               ) : isListening ? (
