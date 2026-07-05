@@ -132,8 +132,8 @@ export default function DashboardPage() {
       <header className="border-b border-zinc-200 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white" aria-hidden="true">A</div>
-            <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-800 to-zinc-500 dark:from-zinc-50 dark:to-zinc-400 bg-clip-text text-transparent">Antigravity Prep</span>
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white" aria-hidden="true">AI</div>
+            <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-800 to-zinc-500 dark:from-zinc-50 dark:to-zinc-400 bg-clip-text text-transparent">AI Everywhere</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
             <Link href="/dashboard" className="text-zinc-900 dark:text-zinc-100 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Interviews</Link>
