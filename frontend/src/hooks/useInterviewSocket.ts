@@ -63,13 +63,15 @@ export function useInterviewSocket(token: string, sessionId: string) {
     sequenceIdRef.current = 0;
   }, [sessionId]);
 
-  const sendTextMessage = useCallback((text: string) => {
+  const sendTextMessage = useCallback((text: string, skipAppend = false) => {
     if (!socketRef.current?.connected) {
       console.warn('[Network Core] Text message dropped: Socket connection is currently offline.');
       return;
     }
     // Immediately show the candidate's message in the transcript
-    storeActions.appendTranscript({ role: 'candidate', content: text });
+    if (!skipAppend) {
+      storeActions.appendTranscript({ role: 'candidate', content: text });
+    }
     socketRef.current.emit('user-message', { sessionId, content: text });
   }, [sessionId]);
 
