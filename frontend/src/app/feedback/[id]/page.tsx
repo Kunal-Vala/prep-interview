@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
@@ -164,6 +164,81 @@ export default function FeedbackReportPage() {
         });
     }, [report]);
 
+    const handleDownloadReport = useCallback(() => {
+        if (!report) return;
+
+        let markdownContent = `# Mock Interview Feedback Report\n\n`;
+        markdownContent += `**Overall Score**: ${parseFloat(report.overallScore || '0').toFixed(1)}/10.0\n`;
+        markdownContent += `**Technical Score**: ${parseFloat(report.technicalScore || '0').toFixed(1)}/10.0\n`;
+        markdownContent += `**Communication Score**: ${parseFloat(report.communicationScore || '0').toFixed(1)}/10.0\n`;
+        markdownContent += `**Pacing Score**: ${parseFloat(report.pacingScore || '0').toFixed(1)}/10.0\n`;
+        if (report.codeQualityScore) {
+            markdownContent += `**Code Design Quality Score**: ${parseFloat(report.codeQualityScore).toFixed(1)}/10.0\n`;
+        }
+        if (report.behavioralScore) {
+            markdownContent += `**Behavioral Quality Score**: ${parseFloat(report.behavioralScore).toFixed(1)}/10.0\n`;
+        }
+        markdownContent += `\n---\n\n`;
+
+        markdownContent += `## Key Strengths\n`;
+        if (report.strengths && report.strengths.length > 0) {
+            report.strengths.forEach((s) => {
+                markdownContent += `- ${s}\n`;
+            });
+        } else {
+            markdownContent += `No major strengths noted.\n`;
+        }
+        markdownContent += `\n`;
+
+        markdownContent += `## Areas to Improve\n`;
+        if (report.improvements && report.improvements.length > 0) {
+            report.improvements.forEach((imp) => {
+                markdownContent += `### 🔴 ${imp.area} [${imp.severity.toUpperCase()} SEVERITY]\n`;
+                markdownContent += `**Feedback**: ${imp.detail}\n\n`;
+                markdownContent += `**Actionable Advice**: ${imp.actionableAdvice}\n\n`;
+                markdownContent += `**Example from session**: *"${imp.exampleFromSession}"*\n\n`;
+            });
+        } else {
+            markdownContent += `No major improvements requested.\n`;
+        }
+        markdownContent += `\n---\n\n`;
+
+        markdownContent += `## Detailed Q&A Log & AI Criticism\n\n`;
+        groupedQuestions.forEach((q) => {
+            const fb = questionFeedbackMap.get(q.sequenceNumber);
+            markdownContent += `### Q${q.sequenceNumber}: ${fb?.questionSummary || q.category} [${q.category.toUpperCase()}]\n`;
+            markdownContent += `**Question**: ${q.questionText}\n\n`;
+            markdownContent += `**Your Response**: *"${q.userAnswer || 'No response.'}"*\n\n`;
+            
+            if (q.followUps && q.followUps.length > 0) {
+                markdownContent += `**Follow-up Dialogue**:\n`;
+                q.followUps.forEach((f) => {
+                    markdownContent += `- *Interviewer Follow-up*: ${f.questionText}\n`;
+                    markdownContent += `- *Your Response*: *"${f.userAnswer || 'No response.'}"*\n`;
+                });
+                markdownContent += `\n`;
+            }
+
+            if (fb) {
+                markdownContent += `**AI Score**: ${fb.score.toFixed(1)}/10.0\n\n`;
+                markdownContent += `**Assessment**: ${fb.comment}\n\n`;
+                markdownContent += `**How to Improve**: ${fb.suggestionsForImprovement || 'N/A'}\n\n`;
+                markdownContent += `**Ideal Outline**:\n${fb.idealResponseOutline || 'N/A'}\n\n`;
+            }
+            markdownContent += `---\n\n`;
+        });
+
+        // Trigger file download in browser
+        const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `interview_report_${sessionId}.md`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }, [report, groupedQuestions, questionFeedbackMap, sessionId]);
+
     if (loading || (!report && !error)) {
         return (
             <div className="min-h-screen bg-zinc-950 flex items-center justify-center" role="status" aria-live="polite">
@@ -227,9 +302,17 @@ export default function FeedbackReportPage() {
                     <span className="text-base text-zinc-850" aria-hidden="true">|</span>
                     <h1 className="text-base font-extrabold text-zinc-200 font-mono tracking-wider">ASSESSMENT LEDGER ANALYTICS</h1>
                 </div>
-                <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-base font-bold text-white transition-colors focus:outline-none">
-                    Go to Dashboard
-                </Link>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleDownloadReport}
+                        className="px-5 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm font-bold text-zinc-300 transition-colors focus:outline-none cursor-pointer"
+                    >
+                        Download Report
+                    </button>
+                    <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white transition-colors focus:outline-none">
+                        Go to Dashboard
+                    </Link>
+                </div>
             </header>
 
             <main className="max-w-5xl w-full mx-auto px-6 mt-12 grid gap-8 md:grid-cols-3">
