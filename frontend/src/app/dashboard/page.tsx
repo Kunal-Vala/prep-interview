@@ -132,7 +132,7 @@ export default function DashboardPage() {
       <header className="border-b border-zinc-200 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-650 flex items-center justify-center font-bold text-lg text-white" aria-hidden="true">A</div>
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-lg text-white" aria-hidden="true">A</div>
             <span className="font-extrabold tracking-tight bg-gradient-to-r from-zinc-800 to-zinc-500 dark:from-zinc-50 dark:to-zinc-400 bg-clip-text text-transparent">Antigravity Prep</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
@@ -175,7 +175,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="px-6 py-3.5 rounded-xl bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 font-bold text-base text-white shadow-lg shadow-indigo-650/10 dark:shadow-indigo-600/10 transition-all cursor-pointer text-center whitespace-nowrap"
+            className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 font-bold text-base text-white shadow-lg shadow-indigo-600/10 dark:shadow-indigo-600/10 transition-all cursor-pointer text-center whitespace-nowrap"
           >
             Start New Mock Interview
           </button>
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-950 pt-4">
                     <span className="text-sm text-zinc-450 dark:text-zinc-400">{new Date(session.createdAt).toLocaleDateString()}</span>
                     {session.feedbackReport?.status === 'COMPLETED' ? (
-                      <Link href={`/feedback/${session.id}`} className="text-sm font-bold text-indigo-650 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 focus:outline-none">View Report &rarr;</Link>
+                      <Link href={`/feedback/${session.id}`} className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 focus:outline-none">View Report &rarr;</Link>
                     ) : (
                       <Link href={`/interview/${session.id}`} className="text-sm font-bold text-zinc-650 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-zinc-100 focus:outline-none">Enter Room &rarr;</Link>
                     )}
@@ -294,13 +294,13 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button" onClick={() => setMode('VOICE')}
-                      className={`py-3 px-4 rounded-lg text-sm font-bold border transition-all cursor-pointer ${mode === 'VOICE' ? 'bg-indigo-50 dark:bg-indigo-650/10 border-indigo-200 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 text-zinc-500 dark:text-zinc-550'}`}
+                      className={`py-3 px-4 rounded-lg text-sm font-bold border transition-all cursor-pointer ${mode === 'VOICE' ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 text-zinc-500 dark:text-zinc-550'}`}
                     >
                       Voice STT/TTS
                     </button>
                     <button
                       type="button" onClick={() => setMode('TEXT')}
-                      className={`py-3 px-4 rounded-lg text-sm font-bold border transition-all cursor-pointer ${mode === 'TEXT' ? 'bg-indigo-50 dark:bg-indigo-650/10 border-indigo-200 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 text-zinc-500 dark:text-zinc-550'}`}
+                      className={`py-3 px-4 rounded-lg text-sm font-bold border transition-all cursor-pointer ${mode === 'TEXT' ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-850 text-zinc-500 dark:text-zinc-550'}`}
                     >
                       Text Chat
                     </button>
@@ -316,7 +316,7 @@ export default function DashboardPage() {
                   </button>
                   <button
                     type="submit" disabled={isPending}
-                    className="py-3 px-6 rounded-lg bg-indigo-650 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-bold text-white disabled:bg-zinc-200 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 cursor-pointer disabled:cursor-not-allowed"
+                    className="py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-bold text-white disabled:bg-zinc-200 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 cursor-pointer disabled:cursor-not-allowed"
                   >
                     {isPending ? 'Starting...' : 'Launch Session'}
                   </button>
