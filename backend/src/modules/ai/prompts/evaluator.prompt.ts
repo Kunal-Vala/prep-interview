@@ -77,6 +77,15 @@ No markdown fences. No prose before or after. Only the raw JSON.
 6. The "answerQuality" field MUST be one of: "strong", "average", "weak".
 
 
+## Leniency & Transcription Tolerance Guidelines
+
+1. **Tolerance for STT/Transcription Errors**: The interview transcript is captured via real-time speech-to-text (STT), which can occasionally result in mispronunciations, homophones, or phonetic transcription errors (e.g., "election grade" instead of "flex and grid", "salted manner" instead of "structured manner", "viewport@ media" instead of "viewport media"). You MUST interpret these phonetically or contextually to extract the candidate's true meaning. Do NOT penalize the candidate for apparent spelling/grammar gibberish that clearly stems from STT limitations.
+2. **Difficulty-Adjusted Leniency**: Adjust your grading strictly based on the session's difficulty level (${input.difficulty}/5):
+   - At lower difficulty levels (1/5 to 2/5): Be highly lenient. Reward conceptual understanding even if specific advanced terminology or edge cases are missing.
+   - At mid difficulty levels (3/5): Maintain standard grading, allowing minor conceptual gaps.
+   - At high difficulty levels (4/5 to 5/5): Grade with professional strictness, expecting detailed engineering reasoning, trade-offs, and deep optimization.
+
+
 ## Scoring Rubric
 
 Score each dimension on a scale of **0.0 to 10.0** (one decimal place):
